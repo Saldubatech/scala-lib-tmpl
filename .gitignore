@@ -1,5 +1,43 @@
-*.class
-*.log
+# General
 
+# Intellij (temporary)
+.idea
+
+# Secrets and environment
+.env
+.jvmopts
+
+# Scratch files
+/scratch/**
+
+# Mac
+.DS_Store
+
+# logs
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+*.log
+
+# Build Products
+
+# Java/Scala
+*.class
+**/target
+**/.bloop
+**/.bsp
+**/.metals
+**/.tasty
+
+# Python
+**/*.pyc
+**/__pycache__
+
+# Scala worksheet temporary files
+
+**/.scala-build
+
+# project/project
+
+# Scratch areas
+
+tmp/

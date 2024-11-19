@@ -1,0 +1,30 @@
+name: Scala Build, Test & Coverage
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up JDK
+      uses: ./.github/actions/setup-java/
+    - name: Build & Run tests
+      run: sbt "coverage;test;coverageReport"
+    - name: Publish tests
+      uses: codecov/codecov-action@v4
+      with:
+        fail_ci_if_error: false
+        #files: <> # optional
+        flags: ci_tests # optional
+        token: ${{ secrets.CODECOV_TOKEN }}
+    # - name: Publish tests2
+    #   uses: ./.github/actions/codecov-publish/
+    #   with:
+    #     token: ${{ secrets.CODECOV_TOKEN }}
+    #     test-tags: ci_tests

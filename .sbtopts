@@ -1,0 +1,25 @@
+-J-Xmx4G
+# Needed for the sbt-dotenv plugin
+-J--add-opens=java.base/java.util=ALL-UNNAMED
+-J--add-opens=java.base/java.lang=ALL-UNNAMED
+# Needed for Spark (possible overkill)
+-J--add-opens=java.base/java.nio=ALL-UNNAMED
+-J--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED
+-J--add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+-J--add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+-J--add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED
+-J--add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED
+-J--add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED
+-J--add-opens=java.base/java.io=ALL-UNNAMED
+-J--add-opens=java.base/java.nio=ALL-UNNAMED
+-J--add-opens=java.base/java.util=ALL-UNNAMED
+-J--add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+-J--add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED
+-J--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+-J--add-opens=java.base/java.lang=ALL-UNNAMED
+-J--add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+-J--add-opens=java.base/java.math=ALL-UNNAMED
+-J--add-opens=java.sql/java.sql=ALL-UNNAMED
+# Quill Options
+-Dquill.macro.log.pretty=true
+-Dquill.log.file=queries.sql

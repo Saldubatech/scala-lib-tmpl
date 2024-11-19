@@ -1,0 +1,23 @@
+<configuration>
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <!-- https://logback.qos.ch/manual/layouts.html -->
+      <pattern>[%date{mm:ss.SSS} %highlight(%-5level) %15.15logger{10}:%3.3line] %-130.-130msg [%thread]%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="error">
+    <appender-ref ref="console" />
+  </root>
+  <logger name="slick.interop.zio" level="warn"/>
+  <logger name="com.saldubatech" level="warn"/>
+  <logger name="com.saldubatech" level="INFO"/>
+  <logger name="com.saldubatech.test.FixtureSpec" level="TRACE"/>
+  <logger name="com.saldubatech.util.ErrorLog$" level="ERROR"/>
+  <logger name="com.saldubatech.util.WarnLog$" level="WARN"/>
+  <logger name="com.saldubatech.util.InfoLog$" level="INFO"/>
+  <logger name="com.saldubatech.util.DebugLog$" level="DEBUG"/>
+  <logger name="com.saldubatech.util.TraceLog$" level="TRACE"/>
+  <logger name="namedlog" level="ERROR"/>
+
+</configuration>

@@ -1,0 +1,212 @@
+{
+  "files.watcherExclude": {
+    "**/target": true
+  },
+  "cSpell.words": [
+    "alleycats",
+    "bson",
+    "codecov",
+    "cumsum",
+    "DBIO",
+    "DBRS",
+    "Ddes",
+    "deleter",
+    "Eaches",
+    "figsize",
+    "gridspec",
+    "Hikari",
+    "hikaricp",
+    "Hmmss",
+    "hspace",
+    "Indc",
+    "Kolmogorov",
+    "logback",
+    "Metaspace",
+    "mllib",
+    "Pekko",
+    "Proto",
+    "pureconfig",
+    "Rdbms",
+    "reactivestreams",
+    "RFOLD",
+    "scalac",
+    "scalacheck",
+    "scalactic",
+    "scalafix",
+    "scalafmt",
+    "scalatest",
+    "scalaz",
+    "scodec",
+    "scopt",
+    "semanticdb",
+    "sharex",
+    "sharey",
+    "Smirnov",
+    "SRIO",
+    "stackless",
+    "suptitle",
+    "SZIO",
+    "testcontainers",
+    "testkit",
+    "tpolecat",
+    "TUPLIFY",
+    "Typesafe",
+    "untasked",
+    "URIO",
+    "wspace",
+    "xlabel",
+    "ylabel"
+  ],
+  "metals": {
+    "inlayHints": {
+      "implicitArguments.enable": true,
+      "implicitConversions": true
+    },
+    "envFile": ".env"
+  },
+  "code-runner.runInTerminal": true,
+  "code-runner.saveAllFilesBeforeRun": true,
+  "code-runner.languageIdToFileExtensionMap": {
+    "scala": ".scala",
+    "bat": ".bat",
+    "powershell": ".ps1",
+    "typescript": ".ts"
+  },
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.tabStopWidth": 4,
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.profiles.osx": {
+
+    "bash": {
+      "path": "bash",
+      "args": [
+        "-l"
+      ],
+      "icon": "terminal-bash"
+    },
+    "zsh": {
+      "path": "zsh",
+      "args": [
+        "-l"
+      ]
+    },
+    "fish": {
+      "path": "fish",
+      "args": [
+        "-l"
+      ]
+    },
+    "tmux": {
+      "path": "tmux",
+      "icon": "terminal-tmux"
+    },
+    "pwsh": {
+      "path": "pwsh",
+      "icon": "terminal-powershell"
+    }
+  },
+  "code-runner.ignoreSelection": true,
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 54322,
+      "askForPassword": true,
+      "driver": "PostgreSQL",
+      "name": "Local tests",
+      "database": "sandbox",
+      "username": "test_user"
+    }
+  ],
+  "python.testing.pytestEnabled": true,
+  "python.analysis.autoFormatStrings": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/analysis/src",
+    "${workspaceFolder}/scripts"
+  ],
+  "python.autoComplete.extraPaths": [
+    "${workspaceFolder}/analysis/src",
+    "${workspaceFolder}/scripts"
+  ],
+  "python.testing.pytestArgs": [
+    "analysis"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    "./analysis",
+    "-p",
+    "test*.py"
+  ],
+  "testExplorer.showOnRun": true,
+  "testExplorer.addToEditorContextMenu": true,
+  "notebook.defaultFormatter": "ms-python.flake8",
+  "testing.alwaysRevealTestOnStateChange": true,
+  "python.analysis.inlayHints.pytestParameters": true,
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "python.analysis.include": [
+    "analysis",
+    "scripts"
+  ],
+  "python.analysis.packageIndexDepths": [
+    {
+      "name": "sqlalchemy",
+      "depth": 3,
+      "includeAllSymbols": true
+    },
+    {
+      "name": "sklearn",
+      "depth": 2
+    },
+    {
+      "name": "matplotlib",
+      "depth": 3
+    },
+    {
+      "name": "pandas",
+      "depth": 2,
+      "includeAllSymbols": true
+    },
+    {
+      "name": "scipy",
+      "depth": 2
+    },
+    {
+      "name": "django",
+      "depth": 2
+    },
+    {
+      "name": "flask",
+      "depth": 2
+    },
+    {
+      "name": "fastapi",
+      "depth": 2
+    }
+  ],
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportUnknownMembertype": "info"
+  },
+  "plantuml.render": "Local",
+  "metals.inlayHints.implicitArguments.enable": true,
+  "metals.inlayHints.implicitConversions.enable": true,
+  "metals.ammoniteJvmProperties": [
+    "-Xmx4G"
+  ],
+  "metals.autoImportBuild": "initial",
+  "metals.defaultBspToBuildTool": false,
+  "metals.enableIndentOnPaste": true,
+  "metals.inlayHints.hintsInPatternMatch.enable": false,
+  "metals.inlayHints.inferredTypes.enable": true,
+  "metals.inlayHints.typeParameters.enable": true,
+  "metals.serverProperties": [
+    "-Xmx4G"
+  ],
+  "metals.suggestLatestUpgrade": true,
+  "metals.serverVersion": "1.3.5+177-b1c38568-SNAPSHOT"
+}
