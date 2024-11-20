@@ -1,10 +1,10 @@
 package com.saldubatech.util.zio
 
-import zio.stream.{ZStream, UStream, Stream}
-import java.{util => ju}
-import zio._
+import zio.stream.{Stream, UStream, ZStream}
+import zio.*
+
+import java.util as ju
 import scala.concurrent.duration.FiniteDuration
-import zio.Chunk
 
 object ZStreamExt:
 
@@ -20,7 +20,7 @@ object ZStreamExt:
 object ZSinkExt
 
 object Examples:
-  import ZStreamExt._
+  import ZStreamExt.*
 
   val gen = ZStream.fromGenerator[Int](0)((n, v) => if v < 10 then Some(v*v) else None)
 

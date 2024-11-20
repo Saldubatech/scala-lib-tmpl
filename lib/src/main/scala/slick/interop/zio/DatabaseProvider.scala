@@ -3,16 +3,14 @@ package slick.interop.zio
 * Copied from https://github.com/ScalaConsultants/zio-slick-interop V0.4.0 and modified.
 */
 
-
 import com.saldubatech.util.LogEnabled
+import com.typesafe.config.Config
+import slick.jdbc.{JdbcBackend, JdbcProfile}
+import zio.*
 
 import javax.sql.DataSource
-import com.typesafe.config.Config
-import zio.*
-import slick.jdbc.JdbcProfile
-import slick.jdbc.JdbcBackend
 
-trait DatabaseProvider(using val dbProfile: JdbcProfile) {
+trait DatabaseProvider(using{
   def db: UIO[JdbcBackend#JdbcDatabaseDef]
   def profile: UIO[JdbcProfile]
 }

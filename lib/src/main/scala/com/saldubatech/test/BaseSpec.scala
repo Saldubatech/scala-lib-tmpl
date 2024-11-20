@@ -1,11 +1,9 @@
 package com.saldubatech.test
 
 import com.saldubatech.util.LogEnabled
-import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.wordspec.AnyWordSpecLike
-import org.scalatest.EitherValues
+import org.scalatest.wordspec.{AnyWordSpec, AnyWordSpecLike}
+import org.scalatest.{BeforeAndAfterAll, EitherValues}
 
 import scala.collection.mutable
 

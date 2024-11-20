@@ -1,8 +1,8 @@
 package com.saldubatech.test
 
 import com.saldubatech.util.LogEnabled
-
 import com.typesafe.scalalogging.Logger
+
 import scala.quoted.*
 
 object Inspector extends LogEnabled:
@@ -17,7 +17,7 @@ object Inspector extends LogEnabled:
     val cRendered = render(term)
     val level = Expr(l)
     '{
-      import com.saldubatech.util.LogEnabled._
+      import com.saldubatech.util.LogEnabled.*
       val _v: t.Underlying = $term
       ($logger).log(s">>>>>>>", $level)
       ($logger).log(s"Evaluating:", $level)

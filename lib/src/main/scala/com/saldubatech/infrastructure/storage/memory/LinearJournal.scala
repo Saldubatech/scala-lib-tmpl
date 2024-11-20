@@ -1,16 +1,6 @@
 package com.saldubatech.infrastructure.storage.memory
 
-import com.saldubatech.infrastructure.storage.{
-  DIO,
-  InsertionError,
-  JournalEntry,
-  JournaledDomain,
-  NotFoundError,
-  Payload,
-  Term,
-  TimeCoordinates,
-  ValidationError
-}
+import com.saldubatech.infrastructure.storage.{DIO, InsertionError, JournaledDomain, JournalEntry, NotFoundError, Payload, Term, TimeCoordinates, ValidationError}
 import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
 import com.saldubatech.lang.Id
 import com.saldubatech.lang.types.*

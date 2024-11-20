@@ -8,8 +8,8 @@ import com.saldubatech.util.LogEnabled
 import com.typesafe.scalalogging.Logger
 import slick.dbio.{DBIO, StreamingDBIO}
 import zio.ZIO
-import zio.stream.ZStream
 import zio.interop.reactivestreams.*
+import zio.stream.ZStream
 
 import scala.concurrent.ExecutionContext
 
