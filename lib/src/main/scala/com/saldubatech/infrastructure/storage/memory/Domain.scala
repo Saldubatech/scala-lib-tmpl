@@ -1,7 +1,6 @@
 package com.saldubatech.infrastructure.storage.memory
 
-import com.saldubatech.infrastructure.storage.{DataRecord, Domain as D, InsertionError, NotFoundError, Term, ValidationError}
-import com.saldubatech.infrastructure.storage.DIO
+import com.saldubatech.infrastructure.storage.{DataRecord, DIO, InsertionError, NotFoundError, Term, Domain as D}
 import com.saldubatech.lang.Id
 import zio.ZIO
 

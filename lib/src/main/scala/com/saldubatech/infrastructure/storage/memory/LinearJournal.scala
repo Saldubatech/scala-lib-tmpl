@@ -9,7 +9,6 @@ import com.saldubatech.infrastructure.storage.{
   Payload,
   Term,
   TimeCoordinates,
-  TooManyResultsError,
   ValidationError
 }
 import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
@@ -63,7 +62,7 @@ object LinearJournal:
                        .sortBy(er => TimeCoordinates(er.recordedAt, er.effectiveAt))(TimeCoordinates.Ordering().reverse)
                        .headOption
         rs <- if candidate.discriminator != JournalEntry.REMOVAL then Some(candidate) else None
-      } yield candidate.toJournalEntry).collectAll.toZIO
+      } yield rs.toJournalEntry).collectAll.toZIO
 
     override inline def find(inline t: Term[P], at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]] =
       val selected = for {
@@ -92,7 +91,7 @@ object LinearJournal:
                        .sortBy(er => TimeCoordinates(er.recordedAt, er.effectiveAt))(TimeCoordinates.Ordering().reverse)
                        .headOption
         rs <- if candidate.discriminator != JournalEntry.REMOVAL then Some(candidate) else None
-      } yield candidate.toJournalEntry
+      } yield rs.toJournalEntry
       selected.collectAll.toZIO.map(_.size)
 
     override inline def count(inline t: Term[P], at: TimeCoordinates): DIO[Long] =

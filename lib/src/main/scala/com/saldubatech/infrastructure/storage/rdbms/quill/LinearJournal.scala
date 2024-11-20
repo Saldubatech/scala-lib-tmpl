@@ -5,7 +5,6 @@ import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
 import com.saldubatech.lang.Id
 import com.saldubatech.lang.types.*
 import io.getquill.*
-
 import io.getquill.jdbczio.Quill
 import zio.{IO, ZIO}
 

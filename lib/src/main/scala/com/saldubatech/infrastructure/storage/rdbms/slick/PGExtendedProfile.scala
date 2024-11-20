@@ -2,11 +2,10 @@ package com.saldubatech.infrastructure.storage.rdbms.slick
 
 import com.github.tminglei.slickpg.*
 import com.github.tminglei.slickpg.geom.PgPostGISExtensions
-
-import io.circe._
+import io.circe.*
 //import io.circe.generic.auto
-import zio.{ULayer, ZLayer}
 import slick.jdbc.JdbcProfile
+import zio.{ULayer, ZLayer}
 
 
 trait PGExtendedProfile extends ExPostgresProfile

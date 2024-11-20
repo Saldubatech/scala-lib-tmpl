@@ -1,18 +1,6 @@
 package com.saldubatech.infrastructure.storage.rdbms.quill
 
-import com.saldubatech.infrastructure.storage.{
-  DIO,
-  DataRecord,
-  Domain as D,
-  InsertionError,
-  NotFoundError,
-  PersistenceError,
-  RepositoryError,
-  Term,
-  TooManyResultsError,
-  ValidationError
-}
-
+import com.saldubatech.infrastructure.storage.{DataRecord, DIO, InsertionError, NotFoundError, PersistenceError, RepositoryError, Term, TooManyResultsError, ValidationError, Domain as D}
 import com.saldubatech.lang.Id
 import io.getquill.*
 import io.getquill.jdbczio.Quill

@@ -1,7 +1,7 @@
 package com.saldubatech.infrastructure.storage
 
-import com.saldubatech.lang.types.datetime.{Duration, Epoch}
 import com.saldubatech.lang.types.*
+import com.saldubatech.lang.types.datetime.{Duration, Epoch}
 
 /** The temporal coordinates in a bi-temporal plane.
   *
