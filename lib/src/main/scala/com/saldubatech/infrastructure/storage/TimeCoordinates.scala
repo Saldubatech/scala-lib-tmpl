@@ -34,6 +34,17 @@ end TimeCoordinates // case class
 
 object TimeCoordinates:
 
+  class Ordering extends scala.math.Ordering[TimeCoordinates]:
+
+    override def compare(x: TimeCoordinates, y: TimeCoordinates): Int =
+      (x.recordedAt.compare(y.recordedAt), x.effectiveAt.compare(y.effectiveAt)) match
+        case (0, e) => e
+        case (r, _) => r
+
+  given Ordering()
+
   def now: TimeCoordinates = TimeCoordinates(Epoch.now, Epoch.now)
 
   def origin: TimeCoordinates = TimeCoordinates(Epoch.zero, Epoch.zero)
+
+end TimeCoordinates // object
