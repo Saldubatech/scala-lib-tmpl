@@ -2,9 +2,9 @@ package com.saldubatech.lang.predicate.platforms
 
 import algebra.instances.boolean
 import algebra.lattice.Bool
+import InMemoryPlatform.B
 import com.saldubatech.infrastructure.storage.{PersistenceError, PersistenceIO}
 import com.saldubatech.lang.predicate.{Platform, Predicate, Repo}
-import com.saldubatech.lang.predicate.platforms.InMemoryPlatform.B
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.{IO, RLayer, URLayer, ZEnvironment, ZIO, ZLayer}
@@ -20,6 +20,8 @@ object QuillPlatform:
 
   val layer: URLayer[Quill.Postgres[SnakeCase], QuillPlatform] =
     ZLayer(ZIO.serviceWith[Quill.Postgres[SnakeCase]](QuillPlatform(_)))
+
+end QuillPlatform // object
 
 class QuillPlatform(val quill: Quill.Postgres[SnakeCase]) extends Platform:
   selfQuillPlatform =>
@@ -57,7 +59,11 @@ class QuillPlatform(val quill: Quill.Postgres[SnakeCase]) extends Platform:
 //    inline def find[P <: Predicate[E]](p: P)(using prj: platform.REQUIRES[STORAGE, P]): QIO[Seq[E]] =
 //      run[E](filter(p)).mapBoth(sqlExc => PersistenceError("SQL Error", Some(sqlExc)), _.toSeq)
 
-    def add(e: E): QPlatformIO[E]trait QuillRepo[T]:
+    def add(e: E): QPlatformIO[E]
+
+end QuillPlatform // class
+
+trait QuillRepo[T]:
 
   val platform: QuillPlatform
 
