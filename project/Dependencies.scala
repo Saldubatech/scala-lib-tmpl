@@ -59,9 +59,9 @@ object Dependencies {
 
       // ZIO Ecosystem
       val zioJsonVersion   = "0.6.2"
-      val zioConfigVersion = "4.0.2"     // "4.0.0-RC16"
-      val zioHttpVersion   = "3.0.0-RC8" // Upgrade when ready to put effort in HTTP layer, to update the samples.
-      val quillVersion     = "4.8.6"     // "4.8.5"
+      val zioConfigVersion = "4.0.2" // "4.0.0-RC16"
+      val zioHttpVersion   = "3.0.1" // "3.0.0-RC8" // Upgrade when ready to put effort in HTTP layer, to update the samples.
+      val quillVersion     = "4.8.6" // "4.8.5"
 
 //      val quillCore = "io.getquill" %% "quill-core" % quillVersion ONLY FOR SCALA 2!!!!
       val quillJdbcZio =

@@ -39,18 +39,12 @@ object Boot extends ZIOAppDefault:
       }
       .orDie
 
-  val routes = HttpRoutes.routes ++ HealthCheckRoutes.routes
+  val routes = HttpRoutes.routes ++ HealthCheckRoutes.routes ++ Endpoints.routes
 
   private val program: URIO[HealthCheckService with ItemRepository with Server, Nothing] = Server.serve(routes)
 
   override val run =
     program
       .provide(
-        bootstrap,
-        healthCheckServiceLayer,
-        serverLayer,
-        ApiConfig.layer,
-        repoLayer,
-        postgresLayer,
-        dataSourceLayer
+        bootstrap, healthCheckServiceLayer, serverLayer, ApiConfig.layer, repoLayer, postgresLayer, dataSourceLayer
       )
