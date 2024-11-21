@@ -1,7 +1,14 @@
 package com.saldubatech.infrastructure.storage.memory
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import com.saldubatech.infrastructure.storage.{InsertionError, NotFoundError, Predicate, TimeCoordinates, ValidationError}
+import com.saldubatech.infrastructure.storage.{
+  InsertionError,
+  JournalEntry,
+  NotFoundError,
+  Predicate,
+  TimeCoordinates,
+  ValidationError
+}
 import com.saldubatech.lang.Id
 import com.saldubatech.test.persistence.postgresql.{PostgresContainer, TestPGDataSourceBuilder}
 import zio.*
@@ -11,7 +18,7 @@ import zio.test.TestAspect.*
 
 object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
 
-  val underTest: LinearJournal.Service[SamplePayload] = InMemorySampleJournal()
+  val underTestRaw: LinearJournal.Service[SamplePayload] = InMemorySampleJournal()
 
   val probeId1: Id = Id
   val probeId2: Id = Id
@@ -36,7 +43,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
     suite("item repository test with postgres test container")(
       test("save items returns their ids") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           it1       <- underTest.add(probeId1, probe1, tc1)
           it2       <- underTest.add(probeId2, probe2, tc2)
           it3       <- underTest.add(probeId3, probe3, tc3)
@@ -54,25 +61,25 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Cannot add twice") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           cantAdd   <- underTest.add(probeId1, SamplePayload("something else", 33.0), tc1.plus(1L, 1L)).exit
         } yield assert(cantAdd)(fails(equalTo(InsertionError(s"Entity with id $probeId1 already exists"))))
       },
       test("get all returns 3 items") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           items     <- underTest.findAll(viewPoint)
         } yield assert(items)(hasSize(equalTo(3)))
       },
       test("get non existing item") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           item      <- underTest.get("nothing-nothing").exit
         } yield assert(item)(fails(equalTo(NotFoundError("nothing-nothing"))))
       },
       test("Removal can only be done once") {
         for {
-          underTest  <- ZIO.succeed(underTest)
+          underTest  <- ZIO.succeed(underTestRaw)
           _          <- underTest.add(probeId4, probe4, tc4)
           it4        <- underTest.remove(probeId4, tc4r)
           notFound   <- underTest.get(probeId4, viewPoint).exit
@@ -83,7 +90,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Cannot Remove with same time coordinates") {
         for {
-          underTest  <- ZIO.succeed(underTest)
+          underTest  <- ZIO.succeed(underTestRaw)
           itemResult <- underTest.remove(probeId3, tc3).exit
         } yield assert(itemResult)(
           fails(equalTo(ValidationError("Cannot remove unless recordedAt and effectiveAt are monotonic")))
@@ -91,7 +98,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Cannot Update with same time coordinates") {
         for {
-          underTest  <- ZIO.succeed(underTest)
+          underTest  <- ZIO.succeed(underTestRaw)
           itemResult <- underTest.update(probeId3, tc3, updated3).exit
         } yield assert(itemResult)(
           fails(equalTo(ValidationError("Cannot update unless recordedAt and effectiveAt are monotonic")))
@@ -99,23 +106,33 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("update item 3") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           item      <- underTest.update(probeId3, tc32, updated3)
           rItem     <- underTest.get(probeId3, viewPoint)
         } yield assert(item.payload.name)(equalTo("updated item"))
           && assert(item.payload.price)(equalTo(32.0))
           && assert(rItem)(equalTo(item))
       },
+      test("Get item 3 lineage") {
+        for {
+          underTest <- ZIO.succeed(underTestRaw)
+          lineage   <- underTest.lineage(probeId3, None, None)
+        } yield assert(lineage)(hasSize(equalTo(2))) &&
+          assert(lineage.head.isInstanceOf[JournalEntry.Creation[SamplePayload]])(isTrue) &&
+          assert(lineage.head.payload)(equalTo(probe3)) &&
+          assert(lineage.tail.head.isInstanceOf[JournalEntry.Update[SamplePayload]])(isTrue) &&
+          assert(lineage.tail.head.payload)(equalTo(updated3))
+      },
       test("Cannot update non existing item") {
         val newId = Id
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           cantAdd   <- underTest.update(newId, tc32, SamplePayload("something else", 33.0)).exit
         } yield assert(cantAdd)(fails(equalTo(NotFoundError(newId))))
       },
       test("Find one element by name") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           found <-
             underTest.find(item => item.name == "second item", viewPoint)
         } yield assert(found)(hasSize(equalTo(1)))
@@ -123,7 +140,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Find two elements with an or condition") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           found <-
             underTest.find(Predicate.or(_.name == "second item", _.price < 2.0), viewPoint)
         } yield assert(found)(hasSize(equalTo(2)))
@@ -131,7 +148,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Find one element with an and condition") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           found <-
             underTest.find(
               Predicate.and(_.name != "first item", Predicate.or(_.name == "second item", _.price < 2.0)),
@@ -142,7 +159,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Find one element with an negated condition") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           found <-
             underTest.find(Predicate.not(Predicate.or(_.name == "second item", _.price < 2.0)), viewPoint)
         } yield assert(found)(hasSize(equalTo(1)))
@@ -150,7 +167,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
       },
       test("Find one element with a projected condition") {
         for {
-          underTest <- ZIO.succeed(underTest)
+          underTest <- ZIO.succeed(underTestRaw)
           found <-
             underTest.find(Predicate.project(r => r.name, n => n == "first item"), viewPoint)
         } yield assert(found)(hasSize(equalTo(1)))

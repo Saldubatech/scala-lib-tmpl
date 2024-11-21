@@ -100,7 +100,7 @@ extension [R](elements: Iterable[AppResult[R]])
 
   def collectAll: AppResult[Iterable[R]] =
     elements.foldLeft(AppResult.Success[List[R]](List.empty)) {
-      case (Right(acc), Right(element)) => AppResult.Success(element :: acc)
+      case (Right(acc), Right(element)) => AppResult.Success(acc.appended(element))
       case (Right(acc), Left(err))      => AppResult.Fail(err)
       case (Left(errAcc), Right(_))     => AppResult.Fail(errAcc)
       case (Left(errAcc), Left(err)) =>

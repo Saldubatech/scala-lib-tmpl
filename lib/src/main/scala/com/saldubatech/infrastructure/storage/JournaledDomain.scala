@@ -90,6 +90,8 @@ trait JournaledDomain[P <: Payload]:
     */
   def get(rId: Id): DIO[JournalEntry[P]]
 
+  def lineage(eId: Id, from: Option[TimeCoordinates], until: Option[TimeCoordinates]): DIO[Iterable[JournalEntry[P]]]
+
   /** Find one JournalEntry for each entity in the domain. For each entity it will return the most recent record before the given
     * time coordinates. If no records for entities exist, it returns an empty Iterable. Entities that have been deleted before the
     * given time coordinates will not be included in the result.

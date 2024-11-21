@@ -41,37 +41,8 @@ class SampleJournal(quill: Quill.Postgres[Literal])
 
   override def get(eId: Id, at: TimeCoordinates): DIO[JournalEntry[SamplePayload]] = getter(baseQuery, "SampleJournal")(eId, at)
 
-  /*
-    SELECT r. discriminator, r. rId, r. journalId, r. eId, r. recordedAt, r. effectiveAt, r. name, r. price, r. previous FROM sample_journal r
-    WHERE r. eId = ? AND r. discriminator <> ? AND r. rId IN (
-      SELECT ir. rId FROM sample_journal ir
-      WHERE ir. recordedAt <= ? AND ir. effectiveAt <= ? AND ir. eId = ?
-      ORDER BY ir. recordedAt DESC NULLS LAST, ir. effectiveAt DESC NULLS LAST LIMIT 1)
-   */
-//  def get2(eId: Id, at: TimeCoordinates): DIO[JournalEntry[SamplePayload]] =
-//    for {
-//      qRs <- run(
-//               baseQuery.filter(r =>
-//                 r.eId == lift(eId) &&
-//                   r.discriminator != lift(JournalEntry.REMOVAL) &&
-//                   baseQuery
-//                     .filter(ir =>
-//                       ir.recordedAt <= lift(at.recordedAt) &&
-//                         ir.effectiveAt <= lift(at.effectiveAt) &&
-//                         ir.eId == lift(eId)
-//                     )
-//                     .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.descNullsLast, Ord.descNullsLast))
-//                     .map(mr => mr.rId)
-//                     .take(1)
-//                     .contains(r.rId)
-//               )
-//             ).handleExceptions
-//      rs <- qRs match {
-//              case Nil      => ZIO.fail(NotFoundError(eId))
-//              case r :: Nil => r.toJournalEntry.toZIO
-//              case _        => ZIO.fail(TooManyResultsError(eId)) // Should not happen
-//            }
-//    } yield rs
+  override def lineage(eId: Id, from: Option[TimeCoordinates], until: Option[TimeCoordinates]) =
+    this.lineageGetter(baseQuery, "SampleJournal")(eId, from, until)
 
   override def get(rId: Id): DIO[JournalEntry[SamplePayload]] = recordGetter(baseQuery)(rId)
 

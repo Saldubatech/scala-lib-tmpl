@@ -1,6 +1,16 @@
 package com.saldubatech.infrastructure.storage.memory
 
-import com.saldubatech.infrastructure.storage.{DIO, InsertionError, JournaledDomain, JournalEntry, NotFoundError, Payload, Term, TimeCoordinates, ValidationError}
+import com.saldubatech.infrastructure.storage.{
+  DIO,
+  InsertionError,
+  JournalEntry,
+  JournaledDomain,
+  NotFoundError,
+  Payload,
+  Term,
+  TimeCoordinates,
+  ValidationError
+}
 import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
 import com.saldubatech.lang.Id
 import com.saldubatech.lang.types.*
@@ -38,6 +48,19 @@ object LinearJournal:
           if er.discriminator == JournalEntry.REMOVAL then ZIO.fail(NotFoundError(er.eId))
           else er.toJournalEntry.toZIO
         )
+
+    override def lineage(eId: Id, from: Option[TimeCoordinates], until: Option[TimeCoordinates]): DIO[Iterable[JournalEntry[P]]] =
+      storage
+        .get(eId)
+        .map { lMap =>
+          lMap.values.filter { er =>
+            val ref = TimeCoordinates(er.recordedAt, er.effectiveAt)
+            from.fold(true)(tc => tc.isVisibleFrom(ref)) && until.fold(true)(tc => ref.isVisibleFrom(tc))
+          }.toList.sortBy(er => TimeCoordinates(er.recordedAt, er.effectiveAt))(TimeCoordinates.Ordering())
+        }
+        .fold(
+          ZIO.fail(NotFoundError(eId))
+        )(l => l.map(_.toJournalEntry).collectAll.toZIO)
 
     override def get(rId: Id): DIO[JournalEntry[P]] =
       storage.values

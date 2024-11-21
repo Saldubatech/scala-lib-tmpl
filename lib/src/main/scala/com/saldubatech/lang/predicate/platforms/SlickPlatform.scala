@@ -11,7 +11,7 @@ import slick.interop.zio.syntax.*
 import slick.lifted.TableQuery.Extract
 import zio.{Executor, RLayer, URLayer, ZEnvironment, ZIO, ZLayer}
 
-import java.util.concurrent.{Executors, ExecutorService}
+import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext
 import scala.language.postfixOps
 import scala.ref.{PhantomReference, ReferenceQueue}

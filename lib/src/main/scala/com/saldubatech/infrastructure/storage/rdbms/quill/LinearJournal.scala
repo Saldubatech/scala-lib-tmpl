@@ -21,7 +21,7 @@ import java.sql.SQLException
   *     to ensure latest entry is retrieved.
   *   - Monotonicity Checks in Update: Added checks in update to ensure both recordedAt and effectiveAt are monotonic. Rejects
   *     updates with earlier times using ValidationError.
-  *   - Transaction Handling: Uses quillCtx.transaction for transactional operations, improving reliability.
+  *   - Transaction Handling: Uses quillCtx transaction for transactional operations, improving reliability.
   *   - Error Handling: Continues to use the handleExceptions method for consistent error management.
   *   - Placeholder Implementations: Provides placeholders ( ???) for findAll, find, findIncludingRemoved, countAll, count, and
   *     remove since these require more complex logic regarding time travel queries, removal markers and duplicates due to time
@@ -77,6 +77,47 @@ object LinearJournal:
                   case r :: Nil => r.toJournalEntry.toZIO
                   case _        => ZIO.fail(TooManyResultsError(eId)) // Should not happen
                 }
+        } yield rs
+
+    protected inline def lineageGetter(inline baseQuery: EntityQuery[EntryRecord[P]], inline jId: Id)
+        : (Id, Option[TimeCoordinates], Option[TimeCoordinates]) => DIO[Iterable[JournalEntry[P]]] =
+      (eId: Id, from: Option[TimeCoordinates], until: Option[TimeCoordinates]) =>
+        val q: Quoted[Query[EntryRecord[P]]] = (from, until) match
+          case (None, None) =>
+            quote(
+              baseQuery
+                .filter(_.eId == lift(eId))
+                .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.ascNullsLast, Ord.ascNullsLast))
+            )
+          case (Some(fTc), None) =>
+            quote(
+              baseQuery
+                .filter(er =>
+                  er.eId == lift(eId) && er.recordedAt >= lift(fTc.recordedAt) && er.effectiveAt >= lift(fTc.effectiveAt)
+                )
+                .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.ascNullsLast, Ord.ascNullsLast))
+            )
+          case (None, Some(uTc)) =>
+            quote(
+              baseQuery
+                .filter(er =>
+                  er.eId == lift(eId) && er.recordedAt <= lift(uTc.recordedAt) && er.effectiveAt <= lift(uTc.effectiveAt)
+                )
+                .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.ascNullsLast, Ord.ascNullsLast))
+            )
+          case (Some(fTc), Some(uTc)) =>
+            quote(
+              baseQuery
+                .filter(er =>
+                  er.eId == lift(eId) && er.recordedAt >= lift(fTc.recordedAt) && er.effectiveAt >= lift(
+                    fTc.effectiveAt
+                  ) && er.recordedAt <= lift(uTc.recordedAt) && er.effectiveAt <= lift(uTc.effectiveAt)
+                )
+                .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.ascNullsLast, Ord.ascNullsLast))
+            )
+        for {
+          qRs <- run(q).handleExceptions
+          rs  <- qRs.map(_.toJournalEntry).collectAll.toZIO
         } yield rs
 
     protected inline def recordGetter(inline baseQuery: EntityQuery[EntryRecord[P]]): Id => DIO[JournalEntry[P]] =
