@@ -115,6 +115,7 @@ object LinearJournal:
                 )
                 .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.ascNullsLast, Ord.ascNullsLast))
             )
+        println(s"#### ${q.ast}")
         for {
           qRs <- run(q).handleExceptions
           rs  <- qRs.map(_.toJournalEntry).collectAll.toZIO

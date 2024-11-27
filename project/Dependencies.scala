@@ -79,6 +79,7 @@ object Dependencies {
       val streams        = "dev.zio" %% "zio-streams"         % zioVersion
       val http           = "dev.zio" %% "zio-http"            % zioHttpVersion
       val config         = "dev.zio" %% "zio-config"          % zioConfigVersion
+      val configMagnolia = "dev.zio" %% "zio-config-magnolia" % zioConfigVersion
       val configTypesafe = "dev.zio" %% "zio-config-typesafe" % zioConfigVersion
       val json           = "dev.zio" %% "zio-json"            % zioJsonVersion
 

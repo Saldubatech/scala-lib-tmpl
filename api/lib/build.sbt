@@ -7,7 +7,7 @@ enablePlugins(
   JavaAppPackaging
 )
 
-name := "app"
+name := "api_lib"
 
 Compile / run / fork := true
 Test / run / fork    := true

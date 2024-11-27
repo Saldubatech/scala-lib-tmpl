@@ -109,19 +109,18 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
           underTest <- ZIO.succeed(underTestRaw)
           item      <- underTest.update(probeId3, tc32, updated3)
           rItem     <- underTest.get(probeId3, viewPoint)
-        } yield assert(item.payload.name)(equalTo("updated item"))
-          && assert(item.payload.price)(equalTo(32.0))
-          && assert(rItem)(equalTo(item))
+        } yield assertTrue(item.payload.name == "updated item", item.payload.price == 32.0, rItem == item)
       },
       test("Get item 3 lineage") {
         for {
           underTest <- ZIO.succeed(underTestRaw)
           lineage   <- underTest.lineage(probeId3, None, None)
-        } yield assert(lineage)(hasSize(equalTo(2))) &&
-          assert(lineage.head.isInstanceOf[JournalEntry.Creation[SamplePayload]])(isTrue) &&
-          assert(lineage.head.payload)(equalTo(probe3)) &&
-          assert(lineage.tail.head.isInstanceOf[JournalEntry.Update[SamplePayload]])(isTrue) &&
-          assert(lineage.tail.head.payload)(equalTo(updated3))
+        } yield assert(lineage)(hasSize(equalTo(2))) && assertTrue(
+          lineage.head.isInstanceOf[JournalEntry.Creation[SamplePayload]],
+          lineage.head.payload == probe3,
+          lineage.tail.head.isInstanceOf[JournalEntry.Update[SamplePayload]],
+          lineage.tail.head.payload == updated3
+        )
       },
       test("Cannot update non existing item") {
         val newId = Id

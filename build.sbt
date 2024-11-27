@@ -55,11 +55,17 @@ ThisBuild / libraryDependencies ++= Seq(
 
 val libProject  = project in file("lib")
 val lib2Project = (project in file("lib2")).dependsOn(libProject)
-val appProject  = (project in file("app")).dependsOn(lib2Project, libProject)
+
+val apiDir           = file("api")
+val libApiProject    = (project in apiDir / "lib").dependsOn(libProject)
+val typesApiProject  = (project in apiDir / "types").dependsOn(libProject, libApiProject)
+val tenantApiProject = (project in apiDir / "tenant").dependsOn(libProject, typesApiProject, libApiProject)
+
+val appProject = (project in file("app")).dependsOn(tenantApiProject, typesApiProject, libApiProject, lib2Project, libProject)
 
 lazy val root = (project in file("."))
   .settings(
     name            := "m-service-root",
     testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
   )
-  .aggregate(appProject, lib2Project, libProject)
+  .aggregate(appProject, tenantApiProject, libApiProject, typesApiProject, lib2Project, libProject)

@@ -7,13 +7,12 @@ enablePlugins(
   JavaAppPackaging
 )
 
-name := "app"
+name := "api_tenant"
 
 Compile / run / fork := true
 Test / run / fork    := true
 run / envVars        += "DB_PASSWORD" -> localConfig.value.fold("")(_.getString("DB_PASSWORD"))
 run / envVars        += "DB_PORT"     -> localConfig.value.fold("")(_.getString("DB_PORT"))
-val wkw = ExclusionRule()
 
 dependencyOverrides += "org.slf4j" % "slf4j-api" % "2.0.9"
 libraryDependencies ++= Seq(
@@ -24,7 +23,6 @@ libraryDependencies ++= Seq(
   Dependencies.Zio.Runtime.streams,
   Dependencies.Zio.Runtime.http,
   Dependencies.Zio.Runtime.config,
-  Dependencies.Zio.Runtime.configMagnolia,
   Dependencies.Zio.Runtime.configTypesafe,
   Dependencies.Zio.Runtime.json,
 

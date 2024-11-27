@@ -7,7 +7,7 @@ enablePlugins(
   JavaAppPackaging
 )
 
-name := "app"
+name := "api_types"
 
 Compile / run / fork := true
 Test / run / fork    := true
@@ -24,7 +24,6 @@ libraryDependencies ++= Seq(
   Dependencies.Zio.Runtime.streams,
   Dependencies.Zio.Runtime.http,
   Dependencies.Zio.Runtime.config,
-  Dependencies.Zio.Runtime.configMagnolia,
   Dependencies.Zio.Runtime.configTypesafe,
   Dependencies.Zio.Runtime.json,
 
