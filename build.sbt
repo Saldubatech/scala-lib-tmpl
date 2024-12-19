@@ -30,7 +30,8 @@ inThisBuild(
     ciPostReleaseJobs          := Seq.empty,
     ciCheckWebsiteBuildProcess := Seq.empty,
     scalaVersion               := Dependencies.scalaVersion,
-//    ciTargetScalaVersions := makeTargetScalaMap(
+    scalacOptions             ++= Seq("-explain", "-Yretain-trees"),
+    //    ciTargetScalaVersions := makeTargetScalaMap(
 //      `sample-app`
 //    ).value,
 //    ciDefaultTargetJavaVersions := Seq("8"),
@@ -44,7 +45,6 @@ inThisBuild(
     )
   )
 )
-scalacOptions += "-explain"
 val silencerVersion = "1.7.14"
 
 // This is needed just to provide the annotations that are no longer needed with scala 3 per https://github.com/ghik/silencer
@@ -56,10 +56,27 @@ ThisBuild / libraryDependencies ++= Seq(
 val libProject  = project in file("lib")
 val lib2Project = (project in file("lib2")).dependsOn(libProject)
 
-val apiDir           = file("api")
-val libApiProject    = (project in apiDir / "lib").dependsOn(libProject)
-val typesApiProject  = (project in apiDir / "types").dependsOn(libProject, libApiProject)
-val tenantApiProject = (project in apiDir / "tenant").dependsOn(libProject, typesApiProject, libApiProject)
+val apiDir          = file("api")
+val libApiProject   = (project in apiDir / "lib").dependsOn(libProject)
+val typesApiProject = (project in apiDir / "types").dependsOn(libProject, libApiProject)
+
+val componentsDir = file("components")
+
+val commonDir           = componentsDir / "common"
+val commonDomainProject = (project in commonDir / "domain").dependsOn(libProject)
+
+val tenantDir = componentsDir / "tenant"
+
+val tenantDomainProject =
+  (project in tenantDir / "domain").dependsOn(libProject, commonDomainProject, typesApiProject, libApiProject)
+
+val tenantImplProject =
+  (project in tenantDir / "implementation")
+    .dependsOn(tenantDomainProject, commonDomainProject, typesApiProject, libApiProject, libProject)
+
+val tenantApiProject =
+  (project in tenantDir / "api")
+    .dependsOn(tenantImplProject, tenantDomainProject, commonDomainProject, libProject, typesApiProject, libApiProject)
 
 val appProject = (project in file("app")).dependsOn(tenantApiProject, typesApiProject, libApiProject, lib2Project, libProject)
 
@@ -68,4 +85,7 @@ lazy val root = (project in file("."))
     name            := "m-service-root",
     testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
   )
-  .aggregate(appProject, tenantApiProject, libApiProject, typesApiProject, lib2Project, libProject)
+  .aggregate(
+    appProject, tenantApiProject, tenantDomainProject, tenantImplProject, commonDomainProject, libApiProject, typesApiProject,
+    lib2Project, libProject
+  )

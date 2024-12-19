@@ -1,7 +1,8 @@
 package com.saldubatech.infrastructure.storage.memory
 
-import com.saldubatech.infrastructure.storage.{DataRecord, DIO, InsertionError, NotFoundError, Term, Domain as D}
+import com.saldubatech.infrastructure.storage.{DataRecord, Domain as D, InsertionError, NotFoundError, Term}
 import com.saldubatech.lang.Id
+import com.saldubatech.lang.types.DIO
 import zio.ZIO
 
 import scala.util.chaining.scalaUtilChainingOps

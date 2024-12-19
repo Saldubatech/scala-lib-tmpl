@@ -2,7 +2,7 @@ package com.saldubatech.infrastructure.storage.rdbms.quill
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.saldubatech.infrastructure.storage.rdbms.datasource.DataSourceBuilder
-import com.saldubatech.infrastructure.storage.{InsertionError, NotFoundError, Predicate}
+import com.saldubatech.infrastructure.storage.{InsertionError, NotFoundError, Predicate, Projection}
 import com.saldubatech.lang.Id
 import com.saldubatech.test.persistence.postgresql.{PostgresContainer, TestPGDataSourceBuilder}
 import io.getquill.*
@@ -29,11 +29,11 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
   val probeId2: Id = Id
   val probeId3: Id = Id
   val probeId4: Id = Id
-  val probe1       = ItemEvo(probeId1, "first item", BigDecimal(1))
-  val probe2       = ItemEvo(probeId2, "second item", BigDecimal(2))
-  val probe3       = ItemEvo(probeId3, "third item", BigDecimal(3))
-  val updated3     = ItemEvo(probeId3, "updated item", BigDecimal(32))
-  val probe4       = ItemEvo(probeId4, "fourth item", BigDecimal(4))
+  val probe1       = ItemEvo(probeId1, "first item", 1.0)
+  val probe2       = ItemEvo(probeId2, "second item", 2.0)
+  val probe3       = ItemEvo(probeId3, "third item", 3.0)
+  val updated3     = ItemEvo(probeId3, "updated item", 32.0)
+  val probe4       = ItemEvo(probeId4, "fourth item", 4.0)
 
   override def spec: Spec[TestEnvironment & Scope, Throwable] =
     suite("item repository test with postgres test container")(
@@ -52,7 +52,7 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
       test("Cannot add twice") {
         for {
           underTest <- ZIO.service[ItemService]
-          cantAdd   <- underTest.add(ItemEvo(probeId1, "something else", BigDecimal(33))).exit
+          cantAdd   <- underTest.add(ItemEvo(probeId1, "something else", 33)).exit
         } yield assert(cantAdd)(fails(equalTo(InsertionError(s"Cannot Insert record with duplicate Id: $probeId1"))))
       },
       test("get all returns 3 items") {
@@ -91,7 +91,7 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
         val newId = Id
         for {
           underTest <- ZIO.service[ItemService]
-          cantAdd   <- underTest.update(ItemEvo(newId, "something else", BigDecimal(33))).exit
+          cantAdd   <- underTest.update(ItemEvo(newId, "something else", 33)).exit
         } yield assert(cantAdd)(fails(equalTo(NotFoundError(newId))))
       },
       test("Find one element by name") {
@@ -109,7 +109,7 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
           underTest <- ZIO.service[ItemService]
           found <-
             import quill.*
-            underTest.find(Predicate.or(_.name == "second item", _.price < lift(BigDecimal(2))))
+            underTest.find(Predicate.or(_.name == "second item", _.price < lift(2.0)))
         } yield assert(found)(hasSize(equalTo(2)))
           && assert(found)(contains(probe1) && contains(probe2))
       },
@@ -120,7 +120,7 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
           found <-
             import quill.*
             underTest.find(
-              Predicate.and(_.name != "first item", Predicate.or(_.name == "second item", _.price < lift(BigDecimal(2.0))))
+              Predicate.and(_.name != "first item", Predicate.or(_.name == "second item", _.price < lift(2.0)))
             )
         } yield assert(found)(hasSize(equalTo(1)))
           && assert(found)(contains(probe2))
@@ -131,7 +131,7 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
           underTest <- ZIO.service[ItemService]
           found <-
             import quill.*
-            underTest.find(Predicate.not(Predicate.or(_.name == "second item", _.price < lift(BigDecimal(2.0)))))
+            underTest.find(Predicate.not(Predicate.or(_.name == "second item", _.price < lift(2.0))))
         } yield assert(found)(hasSize(equalTo(1)))
           && assert(found)(contains(updated3))
       },
@@ -141,7 +141,7 @@ object SampleRepositoryEvoSpec extends ZIOSpecDefault:
           underTest <- ZIO.service[ItemService]
           found <-
             import quill.*
-            underTest.find(Predicate.project(r => r.name, n => n == "first item"))
+            underTest.find(Projection.project(r => r.name, n => n == "first item"))
         } yield assert(found)(hasSize(equalTo(1)))
           && assert(found)(contains(probe1))
       }

@@ -1,5 +1,6 @@
 package com.saldubatech.infrastructure.storage
 
+import com.saldubatech.infrastructure.storage.rdbms.quill.DynamicPredicate
 import com.saldubatech.lang.types.*
 import com.saldubatech.lang.Id
 import zio.ZIO
@@ -23,13 +24,13 @@ object Domain:
 
 end Domain // object
 
-trait Domain[R <: DataRecord]:
-
-  def add(r: R): AppResult[R]
-  def get(rId: Id): AppResult[R]
-  def findAll: AppResult[Iterable[R]]
-  def countAll: AppResult[Long]
-  def update(r: R): AppResult[R]
-  def remove(rId: Id): AppResult[R]
-
-end Domain // trait
+//trait Domain[R <: DataRecord]:
+//
+//  def add(r: R): AppResult[R]
+//  def get(rId: Id): AppResult[R]
+//  def findAll: AppResult[Iterable[R]]
+//  def countAll: AppResult[Long]
+//  def update(r: R): AppResult[R]
+//  def remove(rId: Id): AppResult[R]
+//
+//end Domain // trait

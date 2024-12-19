@@ -19,8 +19,32 @@ Test / logBuffered   := false
 run / envVars        += "DB_PASSWORD" -> localConfig.value.fold("")(_.getString("DB_PASSWORD"))
 run / envVars        += "DB_PORT"     -> localConfig.value.fold("")(_.getString("DB_PORT"))
 
+//scalacOptions += "-Xcheck-macros"
+//scalacOptions += "-explain -Xcheck-macros"
+
+val tapirDeps = {
+  import Dependencies.Tapir.*
+  Seq(zio, zioHttp, circe)
+}
+
+val zioDeps = {
+  import Dependencies.Zio.*
+  Seq(
+    // Schema & Optics
+    Ecosystem.optics, Ecosystem.schema, Ecosystem.schemaJson, Ecosystem.schemaDerivation, Ecosystem.schemaOptics,
+
+    // ZIO Runtime
+    Runtime.zio,
+    // Needed to access the "Chunk" type.
+    Runtime.streams, Runtime.http, Runtime.config, Runtime.configTypesafe, Runtime.json, Runtime.reactiveStreamsInterop,
+
+    // Persistence
+    Runtime.quillJdbcZio, Runtime.quillCaliban
+  )
+}
+
 dependencyOverrides += "org.slf4j" % "slf4j-api" % "2.0.9"
-libraryDependencies ++= Seq(
+libraryDependencies ++= zioDeps ++ tapirDeps ++ Seq(
   // Basic Utilities
   // sl4j Core
   Dependencies.Logging.logbackCore,
@@ -38,6 +62,9 @@ libraryDependencies ++= Seq(
   Dependencies.Cats.algebra,
   // Dependencies.Cats.effect
 
+  // Magnolia
+  // Dependencies.Magnolia.magnolia,
+
   // Circe
   Dependencies.Circe.core,
   Dependencies.Circe.generic,
@@ -49,13 +76,6 @@ libraryDependencies ++= Seq(
   // Math, etc...
   Dependencies.Spark.mlLib,
 
-  // Schema & Optics
-  Dependencies.Zio.Ecosystem.optics,
-  Dependencies.Zio.Ecosystem.schema,
-  Dependencies.Zio.Ecosystem.schemaJson,
-  Dependencies.Zio.Ecosystem.schemaDerivation,
-  Dependencies.Zio.Ecosystem.schemaOptics,
-
   // logging
   //  Dependencies.Zio.Runtime.logging,
   //  Dependencies.Zio.Runtime.sl4jBridge,
@@ -64,34 +84,14 @@ libraryDependencies ++= Seq(
   //  Dependencies.Logging.logbackClassic,
   //  Dependencies.Logging.logbackCore,
 
-  // ZIO Runtime
-  Dependencies.Zio.Runtime.zio,
-  // Needed to access the "Chunk" type.
-  Dependencies.Zio.Runtime.streams,
-  Dependencies.Zio.Runtime.http,
-  Dependencies.Zio.Runtime.config,
-  Dependencies.Zio.Runtime.configTypesafe,
-  Dependencies.Zio.Runtime.json,
-  Dependencies.Zio.Runtime.reactiveStreamsInterop,
-
   // Persistence
-  Dependencies.Zio.Runtime.quillJdbcZio,
-  Dependencies.Zio.Runtime.quillCaliban,
   Dependencies.Persistence.postgres,
   Dependencies.Persistence.slick,
   Dependencies.Persistence.slickPg,
   Dependencies.Persistence.pgCirce,
   Dependencies.Persistence.slickHikari,
   Dependencies.Persistence.flywayDb,
-  Dependencies.Zio.Runtime.quillCaliban,
-  Dependencies.Zio.Runtime.quillJdbcZio,
 
-  // Schema & Optics
-  Dependencies.Zio.Ecosystem.optics,
-  Dependencies.Zio.Ecosystem.schema,
-  Dependencies.Zio.Ecosystem.schemaJson,
-  Dependencies.Zio.Ecosystem.schemaDerivation,
-  Dependencies.Zio.Ecosystem.schemaOptics,
   // logging
 //  Dependencies.Zio.Runtime.logging,
 //  Dependencies.Zio.Runtime.sl4jBridge,

@@ -10,6 +10,7 @@ import com.saldubatech.infrastructure.storage.{
   ValidationError
 }
 import com.saldubatech.lang.Id
+import com.saldubatech.infrastructure.storage.Projection
 import com.saldubatech.test.persistence.postgresql.{PostgresContainer, TestPGDataSourceBuilder}
 import zio.*
 import zio.test.*
@@ -168,7 +169,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
         for {
           underTest <- ZIO.succeed(underTestRaw)
           found <-
-            underTest.find(Predicate.project(r => r.name, n => n == "first item"), viewPoint)
+            underTest.find(Projection.project(r => r.name, n => n == "first item"), viewPoint)
         } yield assert(found)(hasSize(equalTo(1)))
           && assert(found.map(_.payload))(contains(probe1))
       }

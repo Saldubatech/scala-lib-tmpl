@@ -7,11 +7,15 @@ import com.saldubatech.infrastructure.storage.{
   JournaledDomain,
   NotFoundError,
   Predicate,
+  Projection,
+  Sort,
   TimeCoordinates,
   ValidationError
 }
 import com.saldubatech.infrastructure.storage.rdbms.datasource.DataSourceBuilder
+import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
 import com.saldubatech.lang.Id
+import com.saldubatech.lang.query.Page
 import com.saldubatech.test.persistence.postgresql.{PostgresContainer, TestPGDataSourceBuilder}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
@@ -83,6 +87,37 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
           underTest <- ZIO.service[SampleJournal]
           items     <- underTest.findAll(viewPoint)
         } yield assert(items)(hasSize(equalTo(3)))
+      },
+      test("get all paginated returns 2 items") {
+        for {
+          quill     <- ZIO.service[Quill.Postgres[Literal]]
+          underTest <- ZIO.service[SampleJournal]
+          items <-
+            import quill.*
+            underTest.findAllPaginated(viewPoint, Page(1, 2))
+        } yield assert(items)(hasSize(equalTo(2)))
+      },
+      test("get all sorted and paginated returns 2 items") {
+        for {
+          quill     <- ZIO.service[Quill.Postgres[Literal]]
+          underTest <- ZIO.service[SampleJournal]
+          items <-
+            import quill.*
+            underTest.findAllSortedPaginated(viewPoint, (p: SamplePayload) => Tuple1(p.name), Ord.desc, Page(1, 2))
+        } yield assert(items)(hasSize(equalTo(2)))
+          && assert(items.head.payload)(equalTo(probe3))
+          && assert(items.tail.head.payload)(equalTo(probe2))
+      },
+      test("get all dynamically sorted and paginated returns 2 items") {
+        for {
+          quill     <- ZIO.service[Quill.Postgres[Literal]]
+          underTest <- ZIO.service[SampleJournal]
+          items <-
+            import quill.*
+            underTest.findAllSortedPaginated(viewPoint, (p: SamplePayload) => Tuple1(p.name), Ord.desc, Page(1, 2))
+        } yield assert(items)(hasSize(equalTo(2)))
+          && assert(items.head.payload)(equalTo(probe3))
+          && assert(items.tail.head.payload)(equalTo(probe2))
       },
       test("get non existing item") {
         for {
@@ -195,7 +230,7 @@ object SampleJournalNowViewpointSpec extends ZIOSpecDefault:
           underTest <- ZIO.service[SampleJournal]
           found <-
             import quill.*
-            underTest.find(Predicate.project(r => r.name, n => n == "first item"), viewPoint)
+            underTest.find(Projection.project(r => r.name, n => n == "first item"), viewPoint)
         } yield assert(found)(hasSize(equalTo(1)))
           && assert(found.map(_.payload))(contains(probe1))
       }

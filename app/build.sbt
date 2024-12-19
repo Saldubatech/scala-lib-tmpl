@@ -27,6 +27,8 @@ libraryDependencies ++= Seq(
   Dependencies.Zio.Runtime.configMagnolia,
   Dependencies.Zio.Runtime.configTypesafe,
   Dependencies.Zio.Runtime.json,
+  Dependencies.Persistence.flywayDb,
+  Dependencies.Persistence.flywayPostgres,
 
   // logging
 //  Dependencies.Zio.Runtime.logging,

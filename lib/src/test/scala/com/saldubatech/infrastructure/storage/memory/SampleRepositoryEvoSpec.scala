@@ -1,6 +1,6 @@
 package com.saldubatech.infrastructure.storage.memory
 
-import com.saldubatech.infrastructure.storage.{InsertionError, NotFoundError, Predicate}
+import com.saldubatech.infrastructure.storage.{InsertionError, NotFoundError, Predicate, Projection}
 import com.saldubatech.lang.Id
 import zio.*
 import zio.test.*
@@ -103,7 +103,7 @@ object SampleRepositoryEvoSpec extends JUnitRunnableSpec:
       },
       test("Find one element with a projected condition") {
         for {
-          found <- underTest.find(Predicate.project(_.name, _ == "first item"))
+          found <- underTest.find(Projection.project(_.name, _ == "first item"))
         } yield assert(found)(hasSize(equalTo(1)))
           && assert(found)(contains(probe1))
       }

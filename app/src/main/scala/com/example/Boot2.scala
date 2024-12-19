@@ -1,80 +1,60 @@
 package com.example
 
-import com.example.domain.TenantMock
+import com.saldubatech.infrastructure.container.{App, Configuration}
+import com.saldubatech.infrastructure.network.Network.ServiceLocator
+import com.saldubatech.infrastructure.network.oas3.HealthCheck
+import com.saldubatech.infrastructure.network.Network
+import com.saldubatech.infrastructure.storage.rdbms.datasource.DataSourceBuilder
+import com.saldubatech.infrastructure.storage.rdbms.migration.DbMigration
 import com.typesafe.config
-import org.example.api.lib.bindings.{Home, ServiceEndpoint}
-import org.example.api.lib.requestresponse.{APIError, HealthCheck}
-import org.example.api.tenant
-import org.example.component.Configuration
+import io.getquill.{JdbcContextConfig, Literal}
+import io.getquill.jdbczio.Quill
+import org.example.tenant.api.oas3.zio as tZio
+import org.example.tenant.component.persistence.TenantJournal
+import org.example.tenant.component.services.TenantService
 import zio.*
 import zio.http.Server
-import zio.json.*
-import zio.logging.backend.SLF4J
-//import zio.logging.slf4j.bridge.Slf4jBridge
 
-object Boot2 extends ZIOAppDefault:
+object Boot2 extends App:
 
-  given protocolEncoder: JsonEncoder[Home.Protocol]       = DeriveJsonEncoder.gen[Home.Protocol]
-  given homeEncoder: JsonEncoder[Home]                    = DeriveJsonEncoder.gen[Home]
-  given servicePointEncoder: JsonEncoder[ServiceEndpoint] = DeriveJsonEncoder.gen[ServiceEndpoint]
-  given apiErrorEncoder: JsonEncoder[APIError]            = DeriveJsonEncoder.gen[APIError]
+  private def dbConfigLayer(path: String) =
+    ZLayer(
+      for {
+        rootConfig <- ZIO.service[config.Config]
+      } yield JdbcContextConfig(rootConfig.getConfig(path).resolve())
+    )
 
-//  val home: Home                     = Home.Root(Home.Protocol.OAS3, "localhost", 8080)
-//  val root: ServiceEndpoint.Absolute = ServiceEndpoint.Root(home)
+  private val fwConfigLayer       = DbMigration.FlywayConfiguration.layer("flyway")
+  private val apiConfigLayer      = Configuration.ApiConfig.layer("api")
+  private val databaseConfigLayer = dbConfigLayer("db")
 
-  override val bootstrap: ULayer[Unit] = Runtime.removeDefaultLoggers >>> SLF4J.slf4j
+  private val dataSourceLayer = DataSourceBuilder.layer(databaseConfigLayer)
 
-  private val configLayer: ULayer[config.Config] = Configuration.defaultRootConfigLayer
+  private val postgresLayer = Quill.Postgres.fromNamingStrategy(Literal)
 
-  private val apiConfigLayer = Configuration.ApiConfig.layer("api")
+  val serviceName: String    = "tenant"
+  val serviceVersion: String = "1.0.0-SNAPSHOT"
 
-  private val dbConfigLayer = Configuration.DbConfig.layer("db")
+  private val serviceLocatorLayer = ServiceLocator.layer(serviceName, serviceVersion)
 
-  private val allHomesConfigLayer = Home.allHomesConfigLayer("homes")
+  private val tenantServiceLayer = TenantService.defaultLayer
 
-  private val homeConfigLayer = Home.homeConfigLayer("mainOas3")
-
-  private val tenantEndpointLayer = ServiceEndpoint.layer("tenant", "1.0.0-SNAPSHOT")
-
-  private val homeLayer = Home.homeLayer
-
-  // private val dataSourceLayer = Quill.DataSource.fromPrefix("db")
-
-  // private val dbConfig: config.Config = ConfigFactory.defaultApplication().getConfig("db").resolve()
-
-  // private val dataSourceLayer = Quill.DataSource.fromConfig(dbConfig)
-
-//  private val postgresLayer = Quill.Postgres.fromNamingStrategy(Literal)
-//
-//  private val repoLayer = ItemRepositoryLive.layer
-
-  private val healthCheckServiceLayer = HealthCheck.dummyLayer
-
-  private val serverLayer =
-    ZLayer
-      .service[Configuration.ApiConfig]
-      .flatMap { cfg =>
-        Server.defaultWith(_.binding(cfg.get.host, cfg.get.port))
-      }
-      .orDie
-
-  /*
-    : Routes[
-    EntityOperations.CrudServiceAdaptor[Tenant, TenantSummary] & HealthCheck.Service & ItemRepository,
-    Response
-  ]
-   */
-  // val routes = HealthCheck.routes ++ tenant.Operations.Implementation.routes // ++ Endpoints.routes
+  private val bootEffect = DbMigration.migrationEffect.zipPar(ZIO.service[tZio.TenantOas3Component.Routes]).map { twoResult =>
+    twoResult._2
+  }
 
   // : URIO[HealthCheckService & ItemRepository & Server & tenant.Operations.ServiceAdaptor, Nothing]
-  private val programZIO =
+  private val runner: ZIO[
+    DbMigration & HealthCheck.Service & tZio.TenantOas3Component.Adaptor & tZio.TenantOas3Component.Routes & zio.http.Server,
+    Throwable,
+    Nothing
+  ] =
     for {
-      ep        <- ZIO.service[ServiceEndpoint]
-      component <- ZIO.service[tenant.ApiComponent]
-      rs        <- Server.serve(HealthCheck.routes ++ component.routes)
-    } yield rs
+      routes  <- bootEffect
+      serving <- Server.serve(HealthCheck.routes ++ routes.routes)
+    } yield serving
 
   override val run =
-    programZIO.provide(bootstrap, healthCheckServiceLayer, serverLayer, tenant.ApiComponent.Factory.layer,
-      TenantMock.adaptorLayer, TenantMock.crudLayer, tenantEndpointLayer, homeLayer, homeConfigLayer, allHomesConfigLayer,
-      apiConfigLayer, configLayer)
+    runner.provide(bootstrap, HealthCheck.dummyLayer, App.serverLayer, rootConfigLayer, dataSourceLayer, fwConfigLayer,
+      DbMigration.flywayLayer, postgresLayer, TenantJournal.layer, apiConfigLayer, serviceLocatorLayer, tenantServiceLayer,
+      tZio.TenantOas3Component.layer)

@@ -1,6 +1,7 @@
 package com.saldubatech.infrastructure.storage.memory
 
 import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
+import com.saldubatech.infrastructure.storage.memory
 import com.saldubatech.lang.Id
 
 final case class SamplePayload(name: String, price: Double)

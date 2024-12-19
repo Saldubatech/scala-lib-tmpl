@@ -1,8 +1,10 @@
 package com.saldubatech.infrastructure.storage
 
 import com.saldubatech.lang.Id
+import com.saldubatech.lang.query.Page
 import com.saldubatech.lang.types.datetime.Epoch
-import com.saldubatech.lang.types.AppResult
+import com.saldubatech.lang.types.{AppResult, DIO}
+import io.getquill.Ord
 
 object JournaledDomain:
 
@@ -32,7 +34,15 @@ object JournaledDomain:
 
   object EntryRecord:
 
-    def apply[P <: Payload](je: JournalEntry[P]): EntryRecord[P] =
+    inline def defaultSort[P <: Payload] = (er: EntryRecord[P]) => (er.eId, er.recordedAt, er.effectiveAt)
+
+    inline def liftSort[P <: Payload](inline s: SORT[P]) = (er: EntryRecord[P]) => s(er.payload)
+    inline def sortDir[PORD](inline pOrd: Ord[PORD])     = Ord(pOrd, Ord(Ord.asc[Id], Ord.desc[Epoch], Ord.desc[Epoch]))
+    inline def defaultSortDir                            = Ord(Ord.asc[Id], Ord.desc[Epoch], Ord.desc[Epoch])
+
+    def apply[P <: Payload](
+        je: JournalEntry[P]
+      ): EntryRecord[P] =
       je match
         case Creation(rId, journalId, eId, tc, payload)          => create(rId, journalId, eId, tc, payload)
         case Update(rId, journalId, eId, tc, payload, previous)  => update(rId, journalId, eId, tc, payload, previous)
@@ -63,7 +73,13 @@ object JournaledDomain:
 
 end JournaledDomain // object
 
-trait JournaledDomain[P <: Payload]:
+trait JournaledDomain[
+    P <: Payload,
+    Q[_],
+    QL[_],
+    ORD[_],
+    DP <: ParametricDynamicPredicate[P, Q, QL],
+    DS <: ParametricDynamicSort[P, Q, QL]]:
 
   /** Add a new entity to the domain, creating a JournalEntry for it with a new recordId and the given time coordinates.
     *
@@ -90,6 +106,12 @@ trait JournaledDomain[P <: Payload]:
     */
   def get(rId: Id): DIO[JournalEntry[P]]
 
+  /** Get the history of versions of the entity with eId identifier between the two given time coordinates.
+    * @param eId
+    * @param from
+    * @param until
+    * @return
+    */
   def lineage(eId: Id, from: Option[TimeCoordinates], until: Option[TimeCoordinates]): DIO[Iterable[JournalEntry[P]]]
 
   /** Find one JournalEntry for each entity in the domain. For each entity it will return the most recent record before the given
@@ -99,7 +121,7 @@ trait JournaledDomain[P <: Payload]:
     * @param at
     * @return
     */
-  def findAll(at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]]
+  def findAll(at: TimeCoordinates, page: Page = Page()): DIO[Iterable[JournalEntry[P]]]
 
   /** Find one JournalEntry for each entity in the domain that makes the Term true. The record for each entity is the most recent
     * before the given time coordinates.
@@ -109,7 +131,22 @@ trait JournaledDomain[P <: Payload]:
     * @param at
     * @return
     */
-  inline def find(inline t: Term[P], at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]]
+  inline def find(inline t: Term[P], at: TimeCoordinates, page: Page = Page()): DIO[Iterable[JournalEntry[P]]]
+
+  inline def findSorted(
+      inline t: Term[P],
+      at: TimeCoordinates,
+      inline sort: SORT[P],
+      inline sortDir: SORTDIR[ORD],
+      page: Page = Page()
+    ): DIO[Iterable[JournalEntry[P]]]
+
+  def findDynamicSorted(
+      dp: DP,
+      at: TimeCoordinates,
+      sort: Option[DS],
+      page: Page = Page()
+    ): DIO[Iterable[JournalEntry[P]]]
 
   /** Same behavior as find, but it includes all the entities that have been already removed at the time indicated by the time
     * coordinates
@@ -117,7 +154,9 @@ trait JournaledDomain[P <: Payload]:
     * @param at
     * @return
     */
-  inline def findIncludingRemoved(inline t: Term[P], at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]]
+  inline def findIncludingRemoved(inline t: Term[P], at: TimeCoordinates, page: Page = Page()): DIO[Iterable[JournalEntry[P]]]
+
+  def findDynamicIncludingRemoved(dp: DP, at: TimeCoordinates, page: Page = Page()): DIO[Iterable[JournalEntry[P]]]
 
   /** Count the number of entities in the domain that exist at the given time coordinates (and have not been deleted)
     * @param at
@@ -133,6 +172,8 @@ trait JournaledDomain[P <: Payload]:
     * @return
     */
   inline def count(inline t: Term[P], at: TimeCoordinates): DIO[Long]
+
+  def countDynamic(dp: DP, at: TimeCoordinates): DIO[Long]
 
   /** Create a new JournalEntry for the given Entity at the given time coordinates with the value provided in the payload.
     *

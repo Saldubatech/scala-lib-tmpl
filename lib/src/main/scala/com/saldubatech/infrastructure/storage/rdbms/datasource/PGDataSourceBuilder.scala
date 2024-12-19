@@ -1,6 +1,7 @@
 package com.saldubatech.infrastructure.storage.rdbms.datasource
 
 import com.saldubatech.util.LogEnabled
+import com.saldubatech.infrastructure.container.Configuration as ContainerConfiguration
 import com.typesafe.config.Config
 import org.postgresql.ds.PGSimpleDataSource
 import zio.{TaskLayer, ZIO, ZLayer}
@@ -22,9 +23,21 @@ object PGDataSourceBuilder:
     ds.setPassword(config.pwd)
     PGDataSourceBuilder(ds)
 
+  def fromDbConfig(config: ContainerConfiguration.DbConfig): DataSourceBuilder =
+    val ds = new PGSimpleDataSource()
+    ds.setServerNames(Array(config.serverName))
+    ds.setPortNumbers(Array(config.portNumber))
+    ds.setDatabaseName(config.databaseName)
+
+    //    ds.setUrl(config.getString("url"))
+    ds.setUser(config.user)
+    ds.setPassword(config.password)
+    PGDataSourceBuilder(ds)
+
   def layerFromConfig(config: Configuration): TaskLayer[DataSourceBuilder] =
     ZLayer.fromZIO(ZIO.attempt(PGDataSourceBuilder.fromConfig(config)))
 
+  // Use the DbConfig in com.saldubatech.infrastructure.container
   case class Configuration(
       override val user: String,
       override val pwd: String,
@@ -35,7 +48,7 @@ object PGDataSourceBuilder:
     override lazy val connectionString: String = s"jdbc:postgresql://$server:$port/$dbName"
 
   object Configuration extends LogEnabled:
-
+    
     def apply(dbConfig: Config): Configuration =
       val dsConfig = dbConfig.getConfig("dataSource")
       Configuration(

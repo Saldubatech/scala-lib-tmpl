@@ -3,6 +3,7 @@ package com.saldubatech.infrastructure.storage.rdbms.quill
 import com.saldubatech.infrastructure.storage.*
 import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
 import com.saldubatech.lang.Id
+import com.saldubatech.lang.query.Page
 import com.saldubatech.lang.types.*
 import io.getquill.*
 import io.getquill.jdbczio.Quill
@@ -29,9 +30,64 @@ import java.sql.SQLException
   */
 object LinearJournal:
 
-  trait Inliner[P <: Payload](journalId: Id, quillCtx: Quill.Postgres[Literal]) extends JournaledDomain[P]:
+  trait Inliner[P <: Payload](journalId: Id, quillCtx: Quill.Postgres[Literal])
+      extends JournaledDomain[P, Query, Quoted, Ord, DynamicPredicate[P], DynamicSort[P]]:
 
     import quillCtx.*
+
+    protected inline def filterIncludingRemoved(inline q: Query[EntryRecord[P]], inline at: TimeCoordinates) =
+      quote(
+        q.filter(r0 =>
+          r0.journalId == lift(journalId) &&
+            q.filter(r1 =>
+              r1.journalId == lift(journalId) &&
+                r1.recordedAt <= lift(at.recordedAt) &&
+                r1.effectiveAt <= lift(at.effectiveAt)
+            ).groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
+              .contains((r0.eId, r0.recordedAt, r0.effectiveAt))
+        )
+      )
+
+    protected inline def filter(inline q: Query[EntryRecord[P]], inline at: TimeCoordinates) =
+      quote(
+        q.filter(r =>
+          r.discriminator != lift(JournalEntry.REMOVAL) &&
+            r.recordedAt <= lift(at.recordedAt) &&
+            r.effectiveAt <= lift(at.effectiveAt) &&
+            q.filter(r =>
+              r.recordedAt <= lift(at.recordedAt) &&
+                r.effectiveAt <= lift(at.effectiveAt)
+            ).groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
+              .contains((r.eId, r.recordedAt, r.effectiveAt))
+        )
+      )
+
+    protected inline def doSort(
+        inline q: Quoted[Query[JournaledDomain.EntryRecord[P]]]
+      ) =
+      quote(
+        q.sortBy(EntryRecord.defaultSort[P])(EntryRecord.defaultSortDir)
+      )
+
+    protected inline def doSort(
+        inline q: Quoted[Query[JournaledDomain.EntryRecord[P]]],
+        inline sort: SORT[P],
+        inline sortDir: SORTDIR[Ord]
+      ) =
+      quote(
+        q.sortBy(er => (EntryRecord.liftSort[P](sort)(er), EntryRecord.defaultSort[P](er)))(
+          EntryRecord.sortDir(sortDir)
+        )
+      )
+
+    protected inline def paginate(
+        inline q: Quoted[Query[JournaledDomain.EntryRecord[P]]],
+        inline page: Page = Page()
+      ): Quoted[Query[JournaledDomain.EntryRecord[P]]] =
+      val offset = if page.first == 0 then 0 else page.first - 1
+      quote(
+        unquote(q).drop(lift(offset)).take(lift(page.size))
+      )
 
     protected inline def adder(inline baseQuery: EntityQuery[EntryRecord[P]]): (Id, P, TimeCoordinates) => DIO[JournalEntry[P]] =
       (eId: Id, p: P, coordinates: TimeCoordinates) =>
@@ -115,7 +171,6 @@ object LinearJournal:
                 )
                 .sortBy(r1 => (r1.recordedAt, r1.effectiveAt))(Ord(Ord.ascNullsLast, Ord.ascNullsLast))
             )
-        println(s"#### ${q.ast}")
         for {
           qRs <- run(q).handleExceptions
           rs  <- qRs.map(_.toJournalEntry).collectAll.toZIO
@@ -131,116 +186,104 @@ object LinearJournal:
                   case _        => ZIO.fail(TooManyResultsError(rId))
         } yield rs
 
-    protected inline def allFinder(inline baseQuery: EntityQuery[EntryRecord[P]])
-        : TimeCoordinates => DIO[Iterable[JournalEntry[P]]] =
-      (at: TimeCoordinates) =>
-        for {
-          latestRecords <-
-            run(
-              quote(
-                baseQuery.filter(r =>
-                  r.discriminator != lift(JournalEntry.REMOVAL) &&
-                    baseQuery
-                      .filter(r =>
-                        r.recordedAt <= lift(at.recordedAt) &&
-                          r.effectiveAt <= lift(at.effectiveAt)
-                      )
-                      .groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
-                      .contains((r.eId, r.recordedAt, r.effectiveAt))
-                )
-              )
-            ).handleExceptions
-          journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
-        } yield journalEntries
+    protected inline def allFinder(
+        inline q: Query[EntryRecord[P]],
+        inline at: TimeCoordinates,
+        inline page: Page = Page()
+      ): DIO[Iterable[JournalEntry[P]]] =
+      for {
+        latestRecords  <- run(paginate(doSort(filter(q, at)), page)).handleExceptions
+        journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
+      } yield journalEntries
+
+    protected inline def allSortedFinder(
+        inline q: Query[EntryRecord[P]],
+        inline at: TimeCoordinates,
+        inline sort: SORT[P],
+        inline sortDir: SORTDIR[Ord],
+        inline page: Page = Page()
+      ): DIO[Iterable[JournalEntry[P]]] =
+      for {
+        latestRecords  <- run(paginate(doSort(filter(q, at), sort, sortDir), page)).handleExceptions
+        journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
+      } yield journalEntries
 
     protected inline def finder(inline baseQuery: EntityQuery[EntryRecord[P]], inline t: Term[P])
-        : TimeCoordinates => DIO[Iterable[JournalEntry[P]]] =
-      (at: TimeCoordinates) =>
+        : (TimeCoordinates, Page) => DIO[Iterable[JournalEntry[P]]] =
+      (at: TimeCoordinates, page: Page) =>
+        val q = paginate(doSort(filter(baseQuery.filter(r => t(r.payload)), at)), page)
         for {
-          latestRecords <-
-            run(
-              quote(
-                baseQuery.filter(r =>
-                  r.discriminator != lift(JournalEntry.REMOVAL) &&
-                    baseQuery
-                      .filter(r =>
-                        r.recordedAt <= lift(at.recordedAt) &&
-                          r.effectiveAt <= lift(at.effectiveAt) &&
-                          t(r.payload)
-                      )
-                      .groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
-                      .contains((r.eId, r.recordedAt, r.effectiveAt))
-                )
-              )
-            ).handleExceptions
+          tsString       <- quillCtx.translate(q).handleExceptions
+          latestRecords  <- run(q).handleExceptions
           journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
         } yield journalEntries
 
-    protected inline def includingRemovedFinder(inline baseQuery: EntityQuery[EntryRecord[P]], inline t: Term[P])
-        : TimeCoordinates => DIO[Iterable[JournalEntry[P]]] =
-      (at: TimeCoordinates) =>
+    protected inline def finderSorted(inline baseQuery: EntityQuery[EntryRecord[P]], inline t: Term[P])
+        : (TimeCoordinates, SORT[P], SORTDIR[Ord], Page) => DIO[Iterable[JournalEntry[P]]] =
+      (at: TimeCoordinates, sort: SORT[P], sortDir: SORTDIR[Ord], page: Page) =>
+        val q = paginate(doSort(filter(baseQuery.filter(r => t(r.payload)), at), sort, sortDir), page)
         for {
-          latestRecords <-
-            run(
-              quote(
-                baseQuery.filter(r =>
-                  baseQuery
-                    .filter(r =>
-                      r.recordedAt <= lift(at.recordedAt) &&
-                        r.effectiveAt <= lift(at.effectiveAt) &&
-                        t(r.payload)
-                    )
-                    .groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
-                    .contains((r.eId, r.recordedAt, r.effectiveAt))
-                )
-              )
-            ).handleExceptions
+          tsString       <- quillCtx.translate(q).handleExceptions
+          latestRecords  <- run(q).handleExceptions
+          journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
+        } yield journalEntries
+
+    protected inline def finderDynamic(inline baseQuery: EntityQuery[EntryRecord[P]])
+        : (DynamicPredicate[P], TimeCoordinates, Page) => DIO[Iterable[JournalEntry[P]]] =
+      (dp: DynamicPredicate[P], at: TimeCoordinates, page: Page) =>
+        val q = paginate(doSort(filter(dp.journaled(baseQuery), at)), page)
+        for {
+          tr             <- quillCtx.translate(q).handleExceptions
+          latestRecords  <- run(q).handleExceptions
+          journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
+        } yield journalEntries
+
+    protected inline def finderDynamicSorted(
+        inline baseQuery: EntityQuery[EntryRecord[P]]
+      )(dp: DynamicPredicate[P],
+        at: TimeCoordinates,
+        sort: DynamicSort[P],
+        page: Page
+      ): DIO[Iterable[JournalEntry[P]]] =
+      val q = paginate(sort.journaled(dp.journaled(filter(baseQuery, at))), page)
+      for {
+        latestRecords <- run(q).handleExceptions
+        journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
+      } yield journalEntries
+
+    protected inline def includingRemovedFinder(inline baseQuery: EntityQuery[EntryRecord[P]], inline t: Term[P])
+        : (TimeCoordinates, Page) => DIO[Iterable[JournalEntry[P]]] =
+      (at: TimeCoordinates, page: Page) =>
+        for {
+          latestRecords <- run(
+                             paginate(doSort(filterIncludingRemoved(baseQuery.filter(r => t(r.payload)), at)), page)
+                           ).handleExceptions
+          journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
+        } yield journalEntries
+
+    protected inline def includingRemovedFinderDynamic(inline baseQuery: EntityQuery[EntryRecord[P]])
+        : (DynamicPredicate[P], TimeCoordinates, Page) => DIO[Iterable[JournalEntry[P]]] =
+      (dp: DynamicPredicate[P], at: TimeCoordinates, page: Page) =>
+        val q = paginate(doSort(filterIncludingRemoved(dp.journaled(baseQuery), at)), page)
+        for {
+          tr             <- quillCtx.translate(q).handleExceptions
+          latestRecords  <- run(q).handleExceptions
           journalEntries <- ZIO.foreach(latestRecords)(_.toJournalEntry.toZIO)
         } yield journalEntries
 
     protected inline def allCounter(inline baseQuery: EntityQuery[EntryRecord[P]]): TimeCoordinates => DIO[Long] =
-      (at: TimeCoordinates) =>
-        for {
-          count <-
-            run(
-              quote(
-                baseQuery
-                  .filter(r =>
-                    r.discriminator != lift(JournalEntry.REMOVAL) &&
-                      baseQuery
-                        .filter(r =>
-                          r.recordedAt <= lift(at.recordedAt) &&
-                            r.effectiveAt <= lift(at.effectiveAt)
-                        )
-                        .groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
-                        .contains((r.eId, r.recordedAt, r.effectiveAt))
-                  )
-                  .size
-              )
-            ).handleExceptions
-        } yield count
+      (at: TimeCoordinates) => run(filter(baseQuery, at).size).handleExceptions
 
     protected inline def counter(inline baseQuery: EntityQuery[EntryRecord[P]], inline t: Term[P]): TimeCoordinates => DIO[Long] =
-      (at: TimeCoordinates) =>
+      (at: TimeCoordinates) => run(filter(baseQuery.filter(r => t(r.payload)), at).size).handleExceptions
+
+    protected inline def counterDynamic(inline baseQuery: EntityQuery[EntryRecord[P]])
+        : (DynamicPredicate[P], TimeCoordinates) => DIO[Long] =
+      (dp: DynamicPredicate[P], at: TimeCoordinates) =>
+        val q = filter(dp.journaled(baseQuery), at)
         for {
-          count <-
-            run(
-              quote(
-                baseQuery
-                  .filter(r =>
-                    r.discriminator != lift(JournalEntry.REMOVAL) &&
-                      baseQuery
-                        .filter(r =>
-                          r.recordedAt <= lift(at.recordedAt) &&
-                            r.effectiveAt <= lift(at.effectiveAt) &&
-                            t(r.payload)
-                        )
-                        .groupByMap(_.eId)(entry => (entry.eId, max(entry.recordedAt), max(entry.effectiveAt)))
-                        .contains((r.eId, r.recordedAt, r.effectiveAt))
-                  )
-                  .size
-              )
-            ).handleExceptions
+          tr    <- quillCtx.translate(q).handleExceptions
+          count <- run(q.size).handleExceptions
         } yield count
 
     protected inline def updater(inline baseQuery: EntityQuery[EntryRecord[P]], inline jId: Id)

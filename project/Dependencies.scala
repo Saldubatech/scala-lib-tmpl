@@ -58,7 +58,7 @@ object Dependencies {
     object Runtime {
 
       // ZIO Ecosystem
-      val zioJsonVersion   = "0.6.2"
+      val zioJsonVersion   = "0.7.3" // "0.6.2" 20241217
       val zioConfigVersion = "4.0.2" // "4.0.0-RC16"
       val zioHttpVersion   = "3.0.1" // "3.0.0-RC8" // Upgrade when ready to put effort in HTTP layer, to update the samples.
       val quillVersion     = "4.8.6" // "4.8.5"
@@ -134,6 +134,23 @@ object Dependencies {
 
   }
 
+  object Tapir {
+
+    // https://tapir.softwaremill.com/en/latest/index.html
+
+    val tapir   = "com.softwaremill.sttp.tapir"
+    val version = "1.11.10"
+
+    val core = tapir %% "tapir-core" % version
+
+    val zio = tapir %% "tapir-zio" % version
+    // https://mvnrepository.com/artifact/com.softwaremill.sttp.tapir/tapir-zio-http-server
+    val zioHttp = tapir %% "tapir-zio-http-server" % version
+    // https://mvnrepository.com/artifact/com.softwaremill.sttp.tapir/tapir-json-circe
+    val circe = tapir %% "tapir-json-circe" % version
+
+  }
+
   object Pekko {
 
     // https://mvnrepository.com/artifact/org.apache.pekko/pekko-actor
@@ -143,9 +160,15 @@ object Dependencies {
 
   }
 
+  object Magnolia {
+
+    val version  = "1.3.8"
+    val magnolia = "com.softaremill.magnolia1_3" %% "magnolia" % version
+
+  }
   object Circe {
 
-    val version = "0.14.7"
+    val version = "0.14.10"
     val core    = "io.circe" %% "circe-core"    % version
     val generic = "io.circe" %% "circe-generic" % version
     val parser  = "io.circe" %% "circe-parser"  % version
@@ -192,12 +215,12 @@ object Dependencies {
 
     // https://flywaydb.org/
     // https://alexn.org/blog/2020/11/15/managing-database-migrations-scala/
-    val flywayDbVersion = "10.19.0"
+    val flywayDbVersion = "11.1.0" // "10.19.0" 20241218
     val flywayDb        = "org.flywaydb" % "flyway-core" % flywayDbVersion
     // https://mvnrepository.com/artifact/org.flywaydb/flyway-database-postgresql
-    val flywayPostgres = "org.flywaydb" % "flyway-database-postgresql" % flywayDbVersion % "runtime"
+    val flywayPostgres = "org.flywaydb" % "flyway-database-postgresql" % flywayDbVersion // % "runtime"
 
-    val postgresqlVersion = "42.7.3" // "42.6.0"
+    val postgresqlVersion = "42.7.4" // "42.7.4" 20241219
     val postgres          = "org.postgresql" % "postgresql" % postgresqlVersion
 
   }

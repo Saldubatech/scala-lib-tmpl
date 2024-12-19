@@ -1,7 +1,18 @@
 package com.saldubatech.infrastructure.storage.rdbms.quill
 
-import com.saldubatech.infrastructure.storage.{DataRecord, DIO, InsertionError, NotFoundError, PersistenceError, RepositoryError, Term, TooManyResultsError, ValidationError, Domain as D}
+import com.saldubatech.infrastructure.storage.{
+  DataRecord,
+  Domain as D,
+  InsertionError,
+  NotFoundError,
+  PersistenceError,
+  RepositoryError,
+  Term,
+  TooManyResultsError,
+  ValidationError
+}
 import com.saldubatech.lang.Id
+import com.saldubatech.lang.types.DIO
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.{IO, ZIO}
@@ -9,6 +20,13 @@ import zio.{IO, ZIO}
 import java.sql.SQLException
 
 object Domain:
+
+  trait Service[R <: DataRecord] extends D.Service[R]:
+
+    def dynamicFind(d: DynamicPredicate[R]): DIO[Iterable[R]]
+    def dynamicCount(d: DynamicPredicate[R]): DIO[Long]
+
+  end Service
 
   trait ServiceInliner[R <: DataRecord](val quillCtx: Quill.Postgres[Literal]) extends D.Service[R]:
 
@@ -64,17 +82,31 @@ object Domain:
                   else ZIO.fail(NotFoundError(r.rId))
           } yield i2
         ).handleExceptions
-      // run(quote(baseQuery.filter(_.rId == lift(r.rId)).updateValue(lift(r)).returning(r => r))).handleExceptions
 
     protected inline def attributeFinder[V: Encoder](inline bq: EntityQuery[R], inline selector: R => V): V => DIO[Iterable[R]] =
       (p: V) => run(quote(bq.filter(host => selector(host) == lift(p)))).handleExceptions
 
     protected inline def finder(inline bq: EntityQuery[R], inline selector: R => Boolean): DIO[Iterable[R]] =
       run(quote(bq.filter(r => selector(r)))).handleExceptions
-//      () => run(quote(bq.filter(r => lift(selector).apply(r)))).handleExceptions
+
+    protected inline def dynamicFinder(inline bq: EntityQuery[R]): DynamicPredicate[R] => DIO[Iterable[R]] =
+      (d: DynamicPredicate[R]) =>
+        import Domain.*
+        for {
+          tr <- quillCtx.translate(d(bq)).handleExceptions
+          rs <- run(d(bq)).handleExceptions
+        } yield rs
 
     protected inline def counter(inline baseQuery: Quoted[EntityQuery[R]], inline selector: R => Boolean): DIO[Long] =
       run(quote(baseQuery.filter(r => selector(r)).size)).handleExceptions
+
+    protected inline def dynamicCounter(inline bq: EntityQuery[R]): DynamicPredicate[R] => DIO[Long] =
+      (d: DynamicPredicate[R]) =>
+        import Domain.*
+        for {
+          tr <- quillCtx.translate(d(bq)).handleExceptions
+          rs <- run(d.count(bq)).handleExceptions
+        } yield rs
 
   end ServiceInliner // trait
 

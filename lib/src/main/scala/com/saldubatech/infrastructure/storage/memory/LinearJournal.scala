@@ -1,18 +1,21 @@
 package com.saldubatech.infrastructure.storage.memory
 
 import com.saldubatech.infrastructure.storage.{
-  DIO,
   InsertionError,
   JournalEntry,
   JournaledDomain,
   NotFoundError,
   Payload,
+  SORT,
+  SORTDIR,
   Term,
   TimeCoordinates,
   ValidationError
 }
 import com.saldubatech.infrastructure.storage.JournaledDomain.EntryRecord
+import com.saldubatech.infrastructure.storage.memory.{DynamicPredicate, DynamicSort}
 import com.saldubatech.lang.Id
+import com.saldubatech.lang.query.Page
 import com.saldubatech.lang.types.*
 import zio.ZIO
 
@@ -24,7 +27,9 @@ object LinearJournal:
     * @tparam P
     */
   abstract class Service[P <: Payload](val journalId: Id, storage: collection.mutable.Map[Id, Map[Id, EntryRecord[P]]])
-      extends JournaledDomain[P]:
+      extends JournaledDomain[P, DynamicPredicate.NOOP, DynamicPredicate.NOOP, DynamicPredicate.NOOP, DynamicPredicate[
+        P
+      ], DynamicSort[P]]:
 
     override def add(eId: Id, p: P, coordinates: TimeCoordinates): DIO[JournalEntry[P]] =
       storage.get(eId) match
@@ -68,7 +73,7 @@ object LinearJournal:
         .map(rMap => rMap(rId))
         .fold(ZIO.fail(NotFoundError(rId)))(_.toJournalEntry.toZIO)
 
-    override def findAll(at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]] =
+    override def findAll(at: TimeCoordinates, page: Page = Page()): DIO[Iterable[JournalEntry[P]]] =
       (for {
         entityMap <- storage.values
         candidate <- entityMap.values.toList
@@ -77,7 +82,7 @@ object LinearJournal:
         rs <- if candidate.discriminator != JournalEntry.REMOVAL then Some(candidate) else None
       } yield rs.toJournalEntry).collectAll.toZIO
 
-    override inline def find(inline t: Term[P], at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]] =
+    override inline def find(inline t: Term[P], at: TimeCoordinates, page: Page = Page()): DIO[Iterable[JournalEntry[P]]] =
       val selected = for {
         entityMap <- storage.values
         candidate <- entityMap.values.toList
@@ -87,7 +92,8 @@ object LinearJournal:
       } yield rs.toJournalEntry
       selected.collectAll.toZIO
 
-    override inline def findIncludingRemoved(inline t: Term[P], at: TimeCoordinates): DIO[Iterable[JournalEntry[P]]] =
+    override inline def findIncludingRemoved(inline t: Term[P], at: TimeCoordinates, page: Page = Page())
+        : DIO[Iterable[JournalEntry[P]]] =
       val selected = for {
         entityMap <- storage.values
         candidate <- entityMap.values.toList
@@ -96,6 +102,9 @@ object LinearJournal:
         rs <- if t(candidate.payload) then Some(candidate) else None
       } yield rs.toJournalEntry
       selected.collectAll.toZIO
+
+    override def findDynamicIncludingRemoved(dp: DynamicPredicate[P], at: TimeCoordinates, page: Page = Page())
+        : DIO[Iterable[JournalEntry[P]]] = ???
 
     override def countAll(at: TimeCoordinates): DIO[Long] =
       val selected = for {
@@ -116,6 +125,8 @@ object LinearJournal:
         rs <- if candidate.discriminator != JournalEntry.REMOVAL && t(candidate.payload) then Some(candidate) else None
       } yield rs.toJournalEntry
       selected.collectAll.toZIO.map(_.size)
+
+    override def countDynamic(dp: DynamicPredicate[P], at: TimeCoordinates): DIO[Long] = ???
 
     override def update(eId: Id, at: TimeCoordinates, payload: P): DIO[JournalEntry[P]] =
       for {
@@ -141,6 +152,21 @@ object LinearJournal:
         val er = EntryRecord(removal)
         storage(er.eId) += er.rId -> er
         removal
+
+    override inline def findSorted(
+        inline t: Term[P],
+        at: TimeCoordinates,
+        inline sort: SORT[P],
+        inline sortDir: SORTDIR[DynamicPredicate.NOOP],
+        page: Page
+      ) = ???
+
+    override def findDynamicSorted(
+        dp: DynamicPredicate[P],
+        at: TimeCoordinates,
+        sort: Option[DynamicSort[P]],
+        page: Page
+      ): DIO[Iterable[JournalEntry[P]]] = ???
 
   end Service // class
 

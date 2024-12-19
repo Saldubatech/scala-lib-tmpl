@@ -11,11 +11,12 @@ object DbMigrator extends ZIOAppDefault:
 //    FlywayMigrations.migrationLayer
 //    Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
-  private val config: Config = ConfigFactory.defaultApplication().resolve()
-  private val dbConfig       = config.getConfig("db")
-  private val pgConfig       = PGDataSourceBuilder.Configuration(dbConfig)
-  private val flywayConfig   = DbMigration.FlywayConfiguration(dbConfig.getConfig("flyway"), pgConfig)
+  private val config: Config     = ConfigFactory.defaultApplication().resolve()
+  private val dbTSConfig: Config = config.getConfig("db")
+  private val pgConfig           = PGDataSourceBuilder.Configuration(dbTSConfig)
+  private val fwyTSConfig        = config.getConfig("flyway")
+  private val flywayConfig       = DbMigration.FlywayConfiguration(fwyTSConfig)
 
   override val run: Task[Int] = DbMigration.migrator.provide(
-    DbMigration.flywayLayer(flywayConfig)
+    DbMigration.standaloneFlywayLayer(flywayConfig, pgConfig)
   )
