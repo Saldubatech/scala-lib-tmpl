@@ -11,7 +11,8 @@ enablePlugins(
 //  ZioSbtWebsitePlugin,
   ZioSbtEcosystemPlugin,
   ZioSbtCiPlugin,
-  JavaAppPackaging
+  JavaAppPackaging,
+  DockerPlugin
 )
 
 val envFileName = "env.properties"
@@ -68,17 +69,17 @@ val commonDomainProject = (project in commonDir / "domain").dependsOn(libProject
 val tenantDir = componentsDir / "tenant"
 
 val tenantDomainProject =
-  (project in tenantDir / "domain").dependsOn(libProject, commonDomainProject, typesApiProject, libApiProject)
+  (project in tenantDir / "domain").dependsOn(libProject)
 
 val tenantImplProject =
   (project in tenantDir / "implementation")
-    .dependsOn(tenantDomainProject, commonDomainProject, typesApiProject, libApiProject, libProject)
+    .dependsOn(tenantDomainProject, libProject)
 
 val tenantApiProject =
   (project in tenantDir / "api")
-    .dependsOn(tenantImplProject, tenantDomainProject, commonDomainProject, libProject, typesApiProject, libApiProject)
+    .dependsOn(tenantImplProject, tenantDomainProject, libProject, libApiProject)
 
-val appProject = (project in file("app")).dependsOn(tenantApiProject, typesApiProject, libApiProject, lib2Project, libProject)
+val appProject = (project in file("app")).dependsOn(tenantApiProject, libApiProject, libProject)
 
 lazy val root = (project in file("."))
   .settings(

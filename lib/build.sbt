@@ -36,10 +36,11 @@ val zioDeps = {
     // ZIO Runtime
     Runtime.zio,
     // Needed to access the "Chunk" type.
-    Runtime.streams, Runtime.http, Runtime.config, Runtime.configTypesafe, Runtime.json, Runtime.reactiveStreamsInterop,
+    // Runtime.streams,
+    Runtime.http, Runtime.config, Runtime.configTypesafe, Runtime.json, Runtime.reactiveStreamsInterop,
 
     // Persistence
-    Runtime.quillJdbcZio, Runtime.quillCaliban
+    Runtime.quillJdbcZio // , Runtime.quillCaliban
   )
 }
 
@@ -56,10 +57,10 @@ libraryDependencies ++= zioDeps ++ tapirDeps ++ Seq(
   Dependencies.ApacheCommons.math,
 
   // Cats Functional Types
-  Dependencies.Cats.core,
-  Dependencies.Cats.alley,
-  Dependencies.Cats.kittens,
-  Dependencies.Cats.algebra,
+//  Dependencies.Cats.core,
+//  Dependencies.Cats.alley,
+//  Dependencies.Cats.kittens,
+//  Dependencies.Cats.algebra,
   // Dependencies.Cats.effect
 
   // Magnolia
@@ -71,7 +72,7 @@ libraryDependencies ++= zioDeps ++ tapirDeps ++ Seq(
   Dependencies.Circe.parser,
 
   // Actors
-  Dependencies.Pekko.actor,
+//  Dependencies.Pekko.actor,
 
   // Math, etc...
   Dependencies.Spark.mlLib,
@@ -90,7 +91,8 @@ libraryDependencies ++= zioDeps ++ tapirDeps ++ Seq(
   Dependencies.Persistence.slickPg,
   Dependencies.Persistence.pgCirce,
   Dependencies.Persistence.slickHikari,
-  Dependencies.Persistence.flywayDb,
+  // Dependencies.Persistence.flywayDb,
+  Dependencies.Persistence.flywayPostgres,
 
   // logging
 //  Dependencies.Zio.Runtime.logging,

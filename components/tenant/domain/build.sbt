@@ -16,21 +16,21 @@ run / envVars        += "DB_PORT"     -> localConfig.value.fold("")(_.getString(
 
 dependencyOverrides += "org.slf4j" % "slf4j-api" % "2.0.9"
 libraryDependencies ++= Seq(
-  Dependencies.Zio.Runtime.quillJdbcZio,
-  Dependencies.Zio.Runtime.quillCaliban,
-  Dependencies.Persistence.postgres,
-  Dependencies.Zio.Runtime.zio,
-  Dependencies.Zio.Runtime.streams,
-  Dependencies.Zio.Runtime.http,
-  Dependencies.Zio.Runtime.config,
-  Dependencies.Zio.Runtime.configTypesafe,
-  Dependencies.Zio.Runtime.json,
+//  Dependencies.Zio.Runtime.quillJdbcZio,
+//  Dependencies.Zio.Runtime.quillCaliban,
+//  Dependencies.Persistence.postgres,
+//  Dependencies.Zio.Runtime.zio,
+//  Dependencies.Zio.Runtime.streams,
+//  Dependencies.Zio.Runtime.http,
+//  Dependencies.Zio.Runtime.config,
+//  Dependencies.Zio.Runtime.configTypesafe,
+//  Dependencies.Zio.Runtime.json,
 
   // logging
 //  Dependencies.Zio.Runtime.logging,
 //  Dependencies.Zio.Runtime.sl4jBridge,
-  Dependencies.Zio.Runtime.slf4j,
-  Dependencies.Logging.sl4jSimple,
+//  Dependencies.Zio.Runtime.slf4j,
+//  Dependencies.Logging.sl4jSimple,
 //  Dependencies.Logging.logbackClassic,
 //  Dependencies.Logging.logbackCore,
 
@@ -46,9 +46,7 @@ libraryDependencies ++= Seq(
 
 testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
-assembly / mainClass := Some("com.example.Boot")
-
 assembly / assemblyMergeStrategy := {
-  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.preferProject
   case x                                   => MergeStrategy.preferProject
 }

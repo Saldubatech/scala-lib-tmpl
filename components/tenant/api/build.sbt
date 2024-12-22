@@ -18,7 +18,8 @@ dependencyOverrides += "org.slf4j" % "slf4j-api" % "2.0.9"
 
 val zioRuntimeDeps = {
   import Dependencies.Zio.Runtime.*
-  Seq(quillJdbcZio, quillCaliban, zio, streams, http, config, configTypesafe, json, slf4j)
+  // Seq(quillJdbcZio, quillCaliban, zio, streams, http, config, configTypesafe, json, slf4j)
+  Seq(zio, http, slf4j)
 }
 
 val tapirDeps = {
@@ -27,7 +28,7 @@ val tapirDeps = {
 }
 
 libraryDependencies ++= tapirDeps ++ zioRuntimeDeps ++ Seq(
-  Dependencies.Persistence.postgres,
+//  Dependencies.Persistence.postgres,
 
   // logging
   Dependencies.Logging.sl4jSimple,
@@ -49,6 +50,6 @@ testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 assembly / mainClass := Some("com.example.Boot")
 
 assembly / assemblyMergeStrategy := {
-  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.preferProject
   case x                                   => MergeStrategy.preferProject
 }

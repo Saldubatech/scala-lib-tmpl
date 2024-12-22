@@ -1,7 +1,7 @@
 # run with "docker compose up -d"
 
 services:
-  postgres:
+  postgres-util:
     image: postgres:17
     restart: always
     volumes:
@@ -12,4 +12,4 @@ services:
       - POSTGRES_PASSWORD=TestSecreto
       - POSTGRES_DB=sandbox
     ports:
-      - "54322:5432"
+      - "54320:5432"

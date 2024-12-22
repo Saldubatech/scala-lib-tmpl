@@ -216,7 +216,7 @@ object Dependencies {
     // https://flywaydb.org/
     // https://alexn.org/blog/2020/11/15/managing-database-migrations-scala/
     val flywayDbVersion = "11.1.0" // "10.19.0" 20241218
-    val flywayDb        = "org.flywaydb" % "flyway-core" % flywayDbVersion
+    // val flywayDb        = "org.flywaydb" % "flyway-core" % flywayDbVersion
     // https://mvnrepository.com/artifact/org.flywaydb/flyway-database-postgresql
     val flywayPostgres = "org.flywaydb" % "flyway-database-postgresql" % flywayDbVersion // % "runtime"
 
@@ -227,7 +227,7 @@ object Dependencies {
 
   object Testing {
 
-    val containersPostgresVersion = "0.41.3" // "0.41.0"
+    val containersPostgresVersion = "0.41.5" // "0.41.3" 20241220
 
     val containersPostgres =
       "com.dimafeng" %% "testcontainers-scala-postgresql" % containersPostgresVersion

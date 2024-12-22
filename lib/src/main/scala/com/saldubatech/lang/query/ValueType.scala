@@ -63,7 +63,6 @@ object ValueType:
       case6 = valCaseSchema[Boolean](name = "bool")
     )
 
-
   given Typeable[VALUE] =
     new Typeable[VALUE] {
       override def unapply(x: Any): Option[x.type & VALUE] =

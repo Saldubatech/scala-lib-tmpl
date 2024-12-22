@@ -81,7 +81,8 @@ libraryDependencies ++= Seq(
   Dependencies.Persistence.slickPg,
   Dependencies.Persistence.pgCirce,
   Dependencies.Persistence.slickHikari,
-  Dependencies.Persistence.flywayDb,
+  // Dependencies.Persistence.flywayDb,
+  Dependencies.Persistence.flywayPostgres,
   Dependencies.Zio.Runtime.quillCaliban,
   Dependencies.Zio.Runtime.quillJdbcZio,
 

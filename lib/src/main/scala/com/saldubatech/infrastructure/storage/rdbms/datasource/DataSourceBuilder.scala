@@ -8,7 +8,15 @@ import io.getquill.jdbczio.Quill
 import javax.sql.DataSource
 
 object DataSource:
-  val layer: URLayer[DataSourceBuilder, DataSource] = ZLayer(ZIO.serviceWith[DataSourceBuilder](_.dataSource))
+
+  val layer =
+    ZLayer
+      .fromFunction((dsC: JdbcContextConfig) =>
+        println(s"####### ${dsC.config}")
+        Quill.DataSource.fromJdbcConfig(dsC)
+      )
+      .flatten
+
 end DataSource // object
 
 trait DataSourceBuilder:
@@ -19,11 +27,5 @@ object DataSourceBuilder:
   abstract class SimpleDbConfiguration(val user: String, val pwd: String, val dbName: String, val server: String, val port: Int):
     lazy val connectionString: String
   end SimpleDbConfiguration // class
-
-  def layer(dbConfigLayer: URLayer[config.Config, JdbcContextConfig]) =
-    for {
-      env <- dbConfigLayer
-      ds  <- Quill.DataSource.fromJdbcConfig(env.get)
-    } yield ds
 
 end DataSourceBuilder // object
