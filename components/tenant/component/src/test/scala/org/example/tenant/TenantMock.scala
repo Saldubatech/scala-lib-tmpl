@@ -1,22 +1,19 @@
-package org.example.tenant.api.oas3.zio
+package org.example.tenant
 
-import com.saldubatech.lang.query.Query
-import com.saldubatech.lang.types.{AppResult, DIO}
-import com.saldubatech.lang.types.datetime.Epoch
 import com.saldubatech.domain.types.geo.Address
 import com.saldubatech.domain.types.Reference
-import com.saldubatech.infrastructure.network.oas3.entity.{Adaptor, EntityResult, PageResult}
-import com.saldubatech.infrastructure.network.Network.ServiceLocator
-import com.saldubatech.infrastructure.network.oas3.APIError
+import com.saldubatech.infrastructure.network.oas3.entity.{EntityResult, PageResult}
 import com.saldubatech.infrastructure.network.Network
-import com.saldubatech.infrastructure.services.{Service, ServiceLocalAddress}
+import com.saldubatech.infrastructure.network.Network.ServiceLocator
+import com.saldubatech.infrastructure.services.ServiceLocalAddress
+import com.saldubatech.lang.query.Query
+import com.saldubatech.lang.types.{AppResult, DIO}
 import com.saldubatech.lang.types.meta.MetaType
 import com.saldubatech.lang.Id
 import org.example.tenant.api.oas3.zio.domain.TenantSummary
-import org.example.tenant.component.services.TenantService
 import org.example.tenant.domain.Tenant
+import org.example.tenant.services.TenantService
 import zio.{IO, ZIO, ZLayer}
-import zio.schema.Schema
 
 object TenantMock:
 

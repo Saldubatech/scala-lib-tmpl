@@ -1,4 +1,4 @@
-package org.example.tenant.component.services
+package org.example.tenant.services
 
 import com.saldubatech.domain.types.Reference
 import com.saldubatech.infrastructure.network.Network
@@ -10,8 +10,8 @@ import com.saldubatech.lang.Id
 import com.saldubatech.lang.types.*
 import com.saldubatech.lang.query.{Filter, Query}
 import com.saldubatech.lang.types.DIO
-import org.example.tenant.component.persistence.{TenantJournal, TenantPersistence}
 import org.example.tenant.domain.Tenant
+import org.example.tenant.persistence.{TenantJournal, TenantPersistence}
 import zio.{ZIO, ZLayer}
 
 object TenantService:
@@ -49,7 +49,7 @@ class TenantService(
 
   def query(q: Query): DIO[Iterable[Tenant]] =
     for {
-      iDp  <- dpf.journaled(q.filter.getOrElse(Filter.TRUE)).toZIO
+      iDp  <- dpf.journaled(q.filter.getOrElse(Filter.Literal.TRUE)).toZIO
       iSrt <- q.order.fold(AppResult.Success(None))(dps.apply(_).map(Some(_))).toZIO
       rs <-
         persistence

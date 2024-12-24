@@ -1,4 +1,4 @@
-package org.example.tenant.component.persistence
+package org.example.tenant.persistence
 
 import com.saldubatech.domain.types.geo.Address
 import com.saldubatech.domain.types.Reference

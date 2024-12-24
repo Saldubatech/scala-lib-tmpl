@@ -1,4 +1,4 @@
-package org.example.tenant.component.persistence
+package org.example.tenant.persistence
 
 import com.saldubatech.infrastructure.storage.{JournalEntry, JournaledDomain, SORT, SORTDIR, Term, TimeCoordinates}
 import com.saldubatech.infrastructure.storage.rdbms.quill.{DynamicPredicate, DynamicSort, LinearJournal}

@@ -3,12 +3,13 @@ package com.saldubatech.lang.query
 import com.saldubatech.lang.query.Projectable.Field
 import com.saldubatech.lang.types.meta.MetaType
 import zio.http.codec.HttpContentCodec
-import zio.test.{assertCompletes, Spec, ZIOSpecDefault}
 import zio.ZIO
 import zio.http.{Body, Request}
+import zio.test.*
 import zio.test.TestAspect.sequential
+import zio.test.Assertion.*
 
-object QueryJsonZioSpec extends ZIOSpecDefault:
+object QueryZioHttpCodingSpec extends ZIOSpecDefault:
 
   import MetaType.given
 
@@ -24,19 +25,23 @@ object QueryJsonZioSpec extends ZIOSpecDefault:
   import com.saldubatech.infrastructure.network.oas3.entity.QueryContentCodecs
   import QueryContentCodecs.given
   import QueryContentCodecs.*
-
-  val filterCodec: HttpContentCodec[Filter] = HttpContentCodec.fromSchema[Filter]
-  import ValueType.given
-  val valueTypeCodec: HttpContentCodec[ValueType.VALUE] = HttpContentCodec.fromSchema[ValueType.VALUE]
+  import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 
   override def spec =
     suite("A Query encoded should")(
+      test("print Json for Value") {
+        for {
+          rs000 <- valueTypeCodec.encode(12345678901234567890.1).fold(ZIO.fail(_), _.asString)
+
+        } yield
+          println(s"##### $rs000")
+          assert(rs000)(equalTo("12345678901234567890.1"))
+
+          assertCompletes
+      },
       test("print Json for Eq[String]") {
         for {
-          rs000 <-  valueTypeCodec.encode(12345678901234567890.1).fold(ZIO.fail(_), _.asString)
-          bdy    <- wkwCodec.encode(12345678901234567890.1).fold(ZIO.fail(_), b => ZIO.succeed(b))
-          rs00   <- wkwCodec.encode(12345678901234567890.1).fold(ZIO.fail(_), _.asString)
-          rs0    <- wkwCodec.decodeRequest(Request.post("asdf", bdy))
+          rs000  <- valueTypeCodec.encode(12345678901234567890.1).fold(ZIO.fail(_), _.asString)
           rs1    <- filterCodec.encode(underTest2).fold(err => ZIO.fail(s"Encoding Failure: $err"), s => ZIO.succeed(s))
           rsStr1 <- rs1.asString
           rs2    <- filterCodec.encode(underTest1).fold(err => ZIO.fail(s"Encoding Failure: $err"), s => ZIO.succeed(s))
@@ -46,15 +51,40 @@ object QueryJsonZioSpec extends ZIOSpecDefault:
           rs4    <- filterCodec.encode(underTest4).fold(err => ZIO.fail(s"Encoding Failure: $err"), s => ZIO.succeed(s))
           rsStr4 <- rs4.asString
         } yield
-          println(s"#### NOMINAL ENCODED: <<$rs000>>")
-          println(s"#### ENCODED: <<$rs00>>")
-          println(s"#### DECODED: <<${rs0.getClass}>>")
-          println(s"#### Eq[Int]: underTest. $rsStr1")
-          println(s"#### Eq[String]: underTest. $rsStr2")
-          println(s"#### Between[String]: underTest. $rsStr3")
-          println(s"#### Composite: underTest. $rsStr4")
+          assert(rs000)(equalTo("12345678901234567890.1"))
+          println(s"### Eq[Int]: $rsStr1")
+          assert(rsStr1)(equalTo(s"""{"Eq":{"locator":"the_path_thing","reference":"111"}}"""))
+          assert(rsStr2)(equalTo(s"""{"Eq":{"locator":"the_path_thing","reference":"asdf"}}"""))
+          println(s"### Eq[String]: $rsStr2")
+          assert(rsStr3)(equalTo(s"""{"Between":{"locator":[{"Field":"the_path_thing"}],"reference":{"min":{"string":"aaaa"},"max":{"string":"zzzzz"},"minClosed":true,"maxClosed":false}}}"""))
+          assert(rsStr4)(equalTo(s"""{"Composite":{"And":{"clauses":[{"Composite":{"Or":{"clauses":[{"Eq":{"locator":[{"Field":"the_path_thing"}],"reference":{"string":"asdf"}}},{"Eq":{"locator":[{"Field":"the_path_thing"}],"reference":{"int":111}}}]}}},{"Between":{"locator":[{"Field":"the_path_thing"}],"reference":{"min":{"string":"aaaa"},"max":{"string":"zzzzz"},"minClosed":true,"maxClosed":false}}},{"Lt":{"locator":[{"Field":"adfasdf"}],"reference":{"double":33.45}}}]}}}"""))
+          assertCompletes
+      },
+      test("Locator Roundtrip") {
+        val fieldProbe = Projectable.Field("the_path_thing")
+        val indexProbe = Projectable.Index(333)
+        val probe      = List(fieldProbe, indexProbe, fieldProbe)
+//        val locatorCodec = HttpContentCodec.fromSchema(Projectable.locatorSchema)
+        for {
+          bodyField         <- fieldCodec.encode(fieldProbe).fold(ZIO.fail(_), ZIO.succeed(_))
+          decodedField      <- fieldCodec.decodeRequest(Request.post("/", bodyField))
+          bodyIndex         <- indexCodec.encode(indexProbe).fold(ZIO.fail(_), ZIO.succeed(_))
+          decodedIndex      <- indexCodec.decodeRequest(Request.post("/", bodyIndex))
+          bodyStep          <- stepCodec.encode(fieldProbe).fold(ZIO.fail(_), ZIO.succeed(_))
+          decodedStep       <- fieldCodec.decodeRequest(Request.post("/", bodyStep))
+          bodyLocator       <- locatorCodec.encode(probe).fold(ZIO.fail(_), ZIO.succeed(_))
+          decodedLocator    <- locatorCodec.decodeRequest(Request.post("/", bodyLocator))
+          bodyProjection    <- projectionCodec.encode(Projection(probe)).fold(ZIO.fail(_), ZIO.succeed(_))
+          decodedProjection <- projectionCodec.decodeRequest(Request.post("/", bodyProjection))
+        } yield
+          assert(decodedField)(equalTo(fieldProbe))
+          assert(decodedIndex)(equalTo(indexProbe))
+          assert(decodedStep)(equalTo(fieldProbe))
+          assert(decodedLocator)(equalTo(probe))
+          assert(decodedProjection)(equalTo(Projection(probe)))
           assertCompletes
       }
+//      test("")
     ) @@ sequential
 
 //    "decoded" should {
@@ -156,4 +186,4 @@ object QueryJsonZioSpec extends ZIOSpecDefault:
 //      }
 //    }
 
-end QueryJsonZioSpec
+end QueryZioHttpCodingSpec

@@ -1,5 +1,6 @@
 package com.example
 
+import org.example.tenant.TenantComponent
 import com.saldubatech.infrastructure.container.{App, Configuration}
 import com.saldubatech.infrastructure.network.Network.ServiceLocator
 import com.saldubatech.infrastructure.network.oas3.HealthCheck
@@ -9,9 +10,8 @@ import com.saldubatech.infrastructure.storage.rdbms.migration.DbMigration
 import com.typesafe.config
 import io.getquill.{JdbcContextConfig, Literal}
 import io.getquill.jdbczio.Quill
-import org.example.tenant.api.oas3.zio as tZio
-import org.example.tenant.component.persistence.TenantJournal
-import org.example.tenant.component.services.TenantService
+import org.example.tenant.persistence.TenantJournal
+import org.example.tenant.services.TenantService
 import zio.*
 import zio.http.Server
 
@@ -37,15 +37,13 @@ object Boot extends App:
 
   private val serviceLocatorLayer = ServiceLocator.layer(serviceName, serviceVersion)
 
-  private val tenantServiceLayer = TenantService.defaultLayer
-
-  private val bootEffect = DbMigration.migrationEffect.zipPar(ZIO.service[tZio.TenantOas3Component.Routes]).map { twoResult =>
+  private val bootEffect = DbMigration.migrationEffect.zipPar(ZIO.service[TenantComponent.Routing]).map { twoResult =>
     twoResult._2
   }
 
   // : URIO[HealthCheckService & ItemRepository & Server & tenant.Operations.ServiceAdaptor, Nothing]
   private val runner: ZIO[
-    DbMigration & HealthCheck.Service & tZio.TenantOas3Component.Adaptor & tZio.TenantOas3Component.Routes & zio.http.Server,
+    DbMigration & HealthCheck.Service & TenantComponent.ServiceAdaptor & TenantComponent.Routing & zio.http.Server,
     Throwable,
     Nothing
   ] =
@@ -57,4 +55,4 @@ object Boot extends App:
   override val run =
     runner.provide(bootstrap, HealthCheck.dummyLayer, App.serverLayer, rootConfigLayer, databaseConfigLayer, dataSourceLayer,
       fwConfigLayer, DbMigration.flywayLayer, postgresLayer, TenantJournal.layer, apiConfigLayer, serviceLocatorLayer,
-      tenantServiceLayer, tZio.TenantOas3Component.layer)
+      TenantService.defaultLayer, TenantComponent.layer)

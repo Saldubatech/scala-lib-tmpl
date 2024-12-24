@@ -4,10 +4,10 @@ import com.saldubatech.infrastructure.network.oas3.Adaptor.decorate
 import com.saldubatech.lang.query.{Page, Query}
 import com.saldubatech.lang.types.meta.MetaType
 import zio.Tag as ZTag
+import zio.http.{string, Method}
 import zio.http.codec.*
 import zio.http.endpoint.Endpoint
 import zio.http.endpoint.openapi.{OpenAPI, OpenAPIGen}
-import zio.http.{string, Method}
 import zio.schema.{DeriveSchema, Schema}
 
 trait EntityEndpoint[E: ZTag: EntityResult.API: MetaType, S: ZTag: EntityResult.API: MetaType]:

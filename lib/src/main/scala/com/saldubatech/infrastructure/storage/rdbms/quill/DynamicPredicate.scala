@@ -43,13 +43,13 @@ class DynamicPredicateFactory[H <: Product: Projectable]
 
   private def toTermUnsafe(f: Filter): AppResult[String] =
     f match
-      case Filter.TRUE         => AppResult.Success("TRUE")
-      case Filter.FALSE        => AppResult.Success("FALSE")
-      case Filter.And(clauses) => clauses.map(c => toTermUnsafe(c)).collectAll.map(_.mkString("(", " AND ", ")"))
-      case Filter.Or(clauses)  => clauses.map(c => toTermUnsafe(c)).collectAll.map(_.mkString("(", " OR ", ")"))
-      case Filter.Not(c)       => toTermUnsafe(c).map(cStr => s"NOT $cStr")
-      case t: Filter.Compare   => compare(t)
-      case rg: Filter.Range    => intervalCheck(rg)
+      case Filter.Literal.TRUE  => AppResult.Success("TRUE")
+      case Filter.Literal.FALSE => AppResult.Success("FALSE")
+      case Filter.And(clauses)  => clauses.map(c => toTermUnsafe(c)).collectAll.map(_.mkString("(", " AND ", ")"))
+      case Filter.Or(clauses)   => clauses.map(c => toTermUnsafe(c)).collectAll.map(_.mkString("(", " OR ", ")"))
+      case Filter.Not(c)        => toTermUnsafe(c).map(cStr => s"NOT $cStr")
+      case t: Filter.Compare    => compare(t)
+      case rg: Filter.Range     => intervalCheck(rg)
 
   private def compare(cmp: Filter.Compare): AppResult[String] =
     DynamicProjection.project(cmp.locator).map { l =>

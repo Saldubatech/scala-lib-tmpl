@@ -2,11 +2,11 @@ package com.saldubatech.infrastructure.network.oas3.entity
 
 import com.saldubatech.infrastructure.services.Entity
 import com.saldubatech.lang.query.Query
-import zio.{Tag as ZTag, ZIO}
-import zio.http.endpoint.openapi.SwaggerUI
+import zio.{ZIO, Tag as ZTag}
 import zio.http.*
 import zio.http.codec.*
 import zio.http.codec.PathCodec.path
+import zio.http.endpoint.openapi.SwaggerUI
 
 class Routes[E <: Entity: ZTag: EntityResult.API, S: ZTag: EntityResult.API, A <: Adaptor[E, S]: ZTag](
     val endpoint: EntityEndpoint[E, S]

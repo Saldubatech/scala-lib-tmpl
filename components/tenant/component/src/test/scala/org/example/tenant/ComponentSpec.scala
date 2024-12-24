@@ -1,10 +1,11 @@
-package org.example.tenant.api.oas3.zio
+package org.example.tenant
 
 import com.saldubatech.infrastructure.network.oas3.entity.EntityResult
 import com.saldubatech.infrastructure.network.Network
 import com.saldubatech.infrastructure.network.Network.ServiceLocator
 import com.saldubatech.infrastructure.services.ServiceLocalAddress
 import org.example.tenant.api
+import org.example.tenant.api.oas3.zio.TenantOas3
 import org.example.tenant.domain.Tenant
 import zio.*
 import zio.http.*
@@ -13,9 +14,11 @@ import zio.schema.codec.JsonCodec.*
 import zio.test.*
 import zio.test.TestAspect.*
 
-object Oas3Spec extends ZIOSpecDefault:
+object ComponentSpec extends ZIOSpecDefault:
 
   import com.saldubatech.lang.types.meta.MetaType.given
+
+  object UnderTest extends TenantOas3[TenantMock.Crud]
 
   def spec =
     suite("tenant CRUD operations")(
@@ -30,7 +33,7 @@ object Oas3Spec extends ZIOSpecDefault:
           ep <-
             ZIO.service[ServiceLocator]
           underTest <-
-            ZIO.service[TenantOas3Component.Routes]
+            ZIO.service[TenantComponent.Routing]
           rs <-
             underTest.routes.runZIO(req)
           rsB <-
@@ -50,11 +53,11 @@ object Oas3Spec extends ZIOSpecDefault:
           ServiceLocalAddress("tenant", "1.0.0-SNAPSHOT")
         )
       ),
-      TenantOas3Component.routesLayer,
-      TenantOas3Component.endpointLayer,
-      TenantOas3Component.adaptorLayer,
+      TenantComponent.routesLayer,
+      TenantComponent.endpointLayer,
+      TenantComponent.adaptorLayer,
       TenantMock.crudLayer
 //      TenantMock.adaptorLayer
     ) @@ sequential
 
-end Oas3Spec
+end ComponentSpec

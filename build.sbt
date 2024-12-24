@@ -54,22 +54,63 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.github.ghik" % "silencer-lib_2.13.11" % silencerVersion // % Provided cross CrossVersion.full
 )
 
-val libProject  = project in file("lib")
-val lib2Project = (project in file("lib2")).dependsOn(libProject)
+/*
+@startuml
+title
+= Project Dependencies
+end title
 
-val apiDir          = file("api")
-val libApiProject   = (project in apiDir / "lib").dependsOn(libProject)
-val typesApiProject = (project in apiDir / "types").dependsOn(libProject, libApiProject)
+component Lib
+component Platform
+Platform --> Lib
+'package Api {
+'  component Api.Lib
+'  component Api.Types
+'  Api.Lib --> Api.Types
+'}
+package Tenant {
+  portin in
+  component Tenant.Component
+  component Tenant.Api
+  component Tenant.Domain
+  component Tenant.Impl
+  portout out
+  in --> Tenant.Component
+  Tenant.Component --> Tenant.Api
+  Tenant.Component --> Tenant.Impl
+  Tenant.Api --> Tenant.Domain
+  Tenant.Impl --> Tenant.Domain
+
+  Tenant.Domain -[hidden]-> out
+
+}
+out --> Platform
+'package Common {
+'  component Common.Domain
+'}
+component App
+
+App --> in
+App --> Platform
+@enduml
+ */
+
+val libProject      = project in file("lib")
+val platformProject = (project in file("salduba-platform")).dependsOn(libProject)
+
+//val apiDir          = file("api")
+//val libApiProject   = (project in apiDir / "lib").dependsOn(libProject)
+//val typesApiProject = (project in apiDir / "types").dependsOn(libProject, libApiProject)
 
 val componentsDir = file("components")
 
-val commonDir           = componentsDir / "common"
-val commonDomainProject = (project in commonDir / "domain").dependsOn(libProject)
+//val commonDir           = componentsDir / "common"
+//val commonDomainProject = (project in commonDir / "domain").dependsOn(libProject)
 
 val tenantDir = componentsDir / "tenant"
 
 val tenantDomainProject =
-  (project in tenantDir / "domain").dependsOn(libProject)
+  (project in tenantDir / "domain").dependsOn(platformProject)
 
 val tenantImplProject =
   (project in tenantDir / "implementation")
@@ -77,16 +118,16 @@ val tenantImplProject =
 
 val tenantApiProject =
   (project in tenantDir / "api")
-    .dependsOn(tenantImplProject, tenantDomainProject, libProject, libApiProject)
+    .dependsOn(tenantDomainProject, platformProject)
 
-val appProject = (project in file("app")).dependsOn(tenantApiProject, libApiProject, libProject)
+val tenantComponentProject = (project in tenantDir / "component").dependsOn(tenantApiProject, tenantImplProject)
+
+val appProject = (project in file("app")).dependsOn(tenantComponentProject, platformProject)
 
 lazy val root = (project in file("."))
   .settings(
-    name            := "m-service-root",
+    name            := "root-composite",
     testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
   )
-  .aggregate(
-    appProject, tenantApiProject, tenantDomainProject, tenantImplProject, commonDomainProject, libApiProject, typesApiProject,
-    lib2Project, libProject
-  )
+  .aggregate(appProject, tenantComponentProject, tenantApiProject, tenantDomainProject, tenantImplProject, platformProject,
+    libProject)
