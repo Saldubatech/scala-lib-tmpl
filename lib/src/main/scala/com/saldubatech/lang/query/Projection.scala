@@ -1,20 +1,13 @@
 package com.saldubatech.lang.query
 
-//import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
-//import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-import com.saldubatech.lang.query.Projectable.{locatorEncoder, Field, Index}
-import com.saldubatech.lang.types.meta.MetaType
-import com.saldubatech.lang.types.AppResult
 import zio.json.{JsonDecoder, JsonEncoder}
-import zio.schema.{DeriveSchema, Schema}
+import zio.schema.Schema
 
 case class Projection(path: Projectable.Locator)
 
 object Projection:
 
-  import Projectable.*
-  import Projectable.given
-  import Projectable.Step.given
+  import Projectable.{*, given}
 
   // Need special encoding to avoid too much nesting in the Json representation
   given schema: Schema[Projection] =
@@ -23,17 +16,10 @@ object Projection:
       prj => prj.path
     )
 
-  given projectionJsonEncoder: JsonEncoder[Projection] =
-    Projectable.locatorEncoder.contramap[Projection](prj =>
-      println(s"### Encoding Projection to Locator $prj")
-      prj.path
-    )
+  given projectionJsonEncoder: JsonEncoder[Projection] = Projectable.locatorEncoder.contramap[Projection](prj => prj.path)
 
   given projectionJsonDecoder: JsonDecoder[Projection] =
-    Projectable.locatorDecoder.map[Projection]((l: Projectable.Locator) =>
-      println(s"##### Decoding from Locator to Projection $l")
-      Projection(l)
-    )
+    Projectable.locatorDecoder.map[Projection]((l: Projectable.Locator) => Projection(l))
 
   implicit def p(path: Projectable.Locator): Projection = Projection(path)
 

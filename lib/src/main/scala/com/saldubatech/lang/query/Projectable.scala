@@ -52,8 +52,10 @@ object Projectable:
 
     given schema: Schema[Step] =
       Schema[String].transformOrFail[Step](
-        (str: String) => jsonDecoder.decodeJson(str),
-        (step: Step) => Right(step.toJson)
+        (str: String) => jsonDecoder.decodeJson(s"\"$str\""),
+        (step: Step) =>
+          val rs = step.toJson
+          Right(rs.slice(1, rs.length - 1))
       )
 
   end Step // object
@@ -65,8 +67,10 @@ object Projectable:
 
     given schema: Schema[Field] =
       Schema[String].transformOrFail(
-        str => jsonDecoder.decodeJson(str),
-        idx => Right(jsonEncoder.encodeJson(idx).toString)
+        str => jsonDecoder.decodeJson(s"\"$str\""),
+        f =>
+          val rs = jsonEncoder.encodeJson(f).toString
+          Right(rs.slice(1, rs.length - 1))
       )
 
     given jsonEncoder: JsonEncoder[Field] = JsonEncoder.string.contramap(f => f.stringify)
@@ -86,8 +90,10 @@ object Projectable:
 
     given schema: Schema[Index] =
       Schema[String].transformOrFail(
-        str => jsonDecoder.decodeJson(str),
-        idx => Right(jsonEncoder.encodeJson(idx).toString)
+        str => jsonDecoder.decodeJson(s"\"$str\""),
+        idx =>
+          val rs = jsonEncoder.encodeJson(idx).toString
+          Right(rs.slice(1, rs.length - 1))
       )
 
     given jsonEncoder: JsonEncoder[Index] = JsonEncoder.string.contramap(idx => idx.stringify)
@@ -110,8 +116,10 @@ object Projectable:
   // ^(\[\d+])|(([a-zA-Z_]\w*))(\.((\[\d+])|(([a-zA-Z_]\w*))))*$
   given locatorSchema: Schema[Locator] = // Schema.list(using Step.schema)
     Schema[String].transformOrFail(
-      str => locatorDecoder.decodeJson(str),
-      l => Right(locatorEncoder.encodeJson(l).toString)
+      str => locatorDecoder.decodeJson(s"\"$str\""),
+      l =>
+        val rs = locatorEncoder.encodeJson(l).toString
+        Right(rs.slice(1, rs.length - 1))
     )
 
   given locatorEncoder: JsonEncoder[Locator] = JsonEncoder.string.contramap((loc: Locator) => loc.stringify)

@@ -24,7 +24,7 @@ object QueryZioHttpCodingSpec extends ZIOSpecDefault:
 
   import com.saldubatech.infrastructure.network.oas3.entity.QueryContentCodecs
   import QueryContentCodecs.given
-  import QueryContentCodecs.*
+//  import QueryContentCodecs.*
   import zio.schema.codec.JsonCodec.schemaBasedBinaryCodec
 
   override def spec =
@@ -34,9 +34,7 @@ object QueryZioHttpCodingSpec extends ZIOSpecDefault:
           rs000 <- valueTypeCodec.encode(12345678901234567890.1).fold(ZIO.fail(_), _.asString)
 
         } yield
-          println(s"##### $rs000")
           assert(rs000)(equalTo("12345678901234567890.1"))
-
           assertCompletes
       },
       test("print Json for Eq[String]") {
@@ -52,10 +50,8 @@ object QueryZioHttpCodingSpec extends ZIOSpecDefault:
           rsStr4 <- rs4.asString
         } yield
           assert(rs000)(equalTo("12345678901234567890.1"))
-          println(s"### Eq[Int]: $rsStr1")
           assert(rsStr1)(equalTo(s"""{"Eq":{"locator":"the_path_thing","reference":"111"}}"""))
           assert(rsStr2)(equalTo(s"""{"Eq":{"locator":"the_path_thing","reference":"asdf"}}"""))
-          println(s"### Eq[String]: $rsStr2")
           assert(rsStr3)(equalTo(s"""{"Between":{"locator":[{"Field":"the_path_thing"}],"reference":{"min":{"string":"aaaa"},"max":{"string":"zzzzz"},"minClosed":true,"maxClosed":false}}}"""))
           assert(rsStr4)(equalTo(s"""{"Composite":{"And":{"clauses":[{"Composite":{"Or":{"clauses":[{"Eq":{"locator":[{"Field":"the_path_thing"}],"reference":{"string":"asdf"}}},{"Eq":{"locator":[{"Field":"the_path_thing"}],"reference":{"int":111}}}]}}},{"Between":{"locator":[{"Field":"the_path_thing"}],"reference":{"min":{"string":"aaaa"},"max":{"string":"zzzzz"},"minClosed":true,"maxClosed":false}}},{"Lt":{"locator":[{"Field":"adfasdf"}],"reference":{"double":33.45}}}]}}}"""))
           assertCompletes
@@ -67,24 +63,43 @@ object QueryZioHttpCodingSpec extends ZIOSpecDefault:
 //        val locatorCodec = HttpContentCodec.fromSchema(Projectable.locatorSchema)
         for {
           bodyField         <- fieldCodec.encode(fieldProbe).fold(ZIO.fail(_), ZIO.succeed(_))
+          encodedField      <- bodyField.asString
           decodedField      <- fieldCodec.decodeRequest(Request.post("/", bodyField))
           bodyIndex         <- indexCodec.encode(indexProbe).fold(ZIO.fail(_), ZIO.succeed(_))
+          encodedIndex      <- bodyIndex.asString
           decodedIndex      <- indexCodec.decodeRequest(Request.post("/", bodyIndex))
           bodyStep          <- stepCodec.encode(fieldProbe).fold(ZIO.fail(_), ZIO.succeed(_))
+          encodedStep       <- bodyStep.asString
           decodedStep       <- fieldCodec.decodeRequest(Request.post("/", bodyStep))
           bodyLocator       <- locatorCodec.encode(probe).fold(ZIO.fail(_), ZIO.succeed(_))
+          encodedLocator    <- bodyLocator.asString
           decodedLocator    <- locatorCodec.decodeRequest(Request.post("/", bodyLocator))
           bodyProjection    <- projectionCodec.encode(Projection(probe)).fold(ZIO.fail(_), ZIO.succeed(_))
+          encodedProjection <- bodyProjection.asString
           decodedProjection <- projectionCodec.decodeRequest(Request.post("/", bodyProjection))
         } yield
+          println(s"#### Field:      $encodedField, ${encodedField.length}")
+          println(s"#### Index:      $encodedIndex")
+          println(s"#### Step:       $encodedStep")
+          println(s"#### Locator:    $encodedLocator")
+          println(s"#### Projection: $encodedProjection")
           assert(decodedField)(equalTo(fieldProbe))
           assert(decodedIndex)(equalTo(indexProbe))
           assert(decodedStep)(equalTo(fieldProbe))
           assert(decodedLocator)(equalTo(probe))
           assert(decodedProjection)(equalTo(Projection(probe)))
           assertCompletes
+      },
+      test("Filter Roundtrip") {
+        for {
+          bodyFilter    <- filterCodec.encode(underTest4).fold(ZIO.fail(_), ZIO.succeed(_))
+          encodedFilter <- bodyFilter.asString
+          decodedFilter <- filterCodec.decodeRequest(Request.post("/", bodyFilter))
+        } yield
+          println(s"#### Encoded Filter: $encodedFilter")
+          assert(decodedFilter)(equalTo(underTest4))
+          assertCompletes
       }
-//      test("")
     ) @@ sequential
 
 //    "decoded" should {
