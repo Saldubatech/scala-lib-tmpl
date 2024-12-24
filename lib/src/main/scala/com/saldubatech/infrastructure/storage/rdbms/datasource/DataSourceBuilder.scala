@@ -11,10 +11,7 @@ object DataSource:
 
   val layer =
     ZLayer
-      .fromFunction((dsC: JdbcContextConfig) =>
-        println(s"####### ${dsC.config}")
-        Quill.DataSource.fromJdbcConfig(dsC)
-      )
+      .fromFunction((dsC: JdbcContextConfig) => Quill.DataSource.fromJdbcConfig(dsC))
       .flatten
 
 end DataSource // object

@@ -7,8 +7,7 @@ enablePlugins(
   JavaAppPackaging
 )
 
-name    := "app"
-version := "1.0.0-SNAPSHOT"
+name := "components-common"
 
 Compile / run / fork := true
 Test / run / fork    := true
@@ -24,11 +23,8 @@ libraryDependencies ++= Seq(
   Dependencies.Zio.Runtime.streams,
   Dependencies.Zio.Runtime.http,
   Dependencies.Zio.Runtime.config,
-  Dependencies.Zio.Runtime.configMagnolia,
   Dependencies.Zio.Runtime.configTypesafe,
   Dependencies.Zio.Runtime.json,
-  // Dependencies.Persistence.flywayDb,
-  Dependencies.Persistence.flywayPostgres,
 
   // logging
 //  Dependencies.Zio.Runtime.logging,
@@ -47,14 +43,12 @@ libraryDependencies ++= Seq(
   Dependencies.Testing.containersPostgres % Test,
   Dependencies.Zio.Testing.magnolia       % Test
 )
-excludeDependencies += ExclusionRule("org.apache.logging.log4j", "log4j-slf4j2-impl")
 
 testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 assembly / mainClass := Some("com.example.Boot")
 
-assemblyMergeStrategy := {
-  // This is needed to ensure that Flyway includes the Postgres extensions when starting up.
+assembly / assemblyMergeStrategy := {
   case PathList("META-INF", "services", "org.flywaydb.core.extensibility.Plugin") => MergeStrategy.concat
   case PathList("META-INF", "MANIFEST.MF")                                        => MergeStrategy.discard
   case PathList("META-INF", "DUMMY.SF")                                           => MergeStrategy.discard // introduces a weird signature that breaks the jar

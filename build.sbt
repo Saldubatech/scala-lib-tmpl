@@ -11,8 +11,7 @@ enablePlugins(
 //  ZioSbtWebsitePlugin,
   ZioSbtEcosystemPlugin,
   ZioSbtCiPlugin,
-  JavaAppPackaging,
-  DockerPlugin
+  JavaAppPackaging
 )
 
 val envFileName = "env.properties"
@@ -98,36 +97,33 @@ App --> Platform
 val libProject      = project in file("lib")
 val platformProject = (project in file("salduba-platform")).dependsOn(libProject)
 
-//val apiDir          = file("api")
-//val libApiProject   = (project in apiDir / "lib").dependsOn(libProject)
-//val typesApiProject = (project in apiDir / "types").dependsOn(libProject, libApiProject)
-
 val componentsDir = file("components")
 
-//val commonDir           = componentsDir / "common"
-//val commonDomainProject = (project in commonDir / "domain").dependsOn(libProject)
+val commonDir               = componentsDir / "common"
+val commonComponentsProject = (project in commonDir).dependsOn(libProject)
 
 val tenantDir = componentsDir / "tenant"
 
-val tenantDomainProject =
-  (project in tenantDir / "domain").dependsOn(platformProject)
+val tenantComponentProject = (project in tenantDir).dependsOn(platformProject)
 
-val tenantImplProject =
-  (project in tenantDir / "implementation")
-    .dependsOn(tenantDomainProject, libProject)
+//val tenantDomainProject =
+//  (project in tenantDir / "domain").dependsOn(platformProject)
+//
+//val tenantImplProject =
+//  (project in tenantDir / "implementation")
+//    .dependsOn(tenantDomainProject, libProject)
+//
+//val tenantApiProject =
+//  (project in tenantDir / "api")
+//    .dependsOn(tenantDomainProject, platformProject)
+//
+//val tenantComponentProject = (project in tenantDir / "component").dependsOn(tenantApiProject, tenantImplProject)
 
-val tenantApiProject =
-  (project in tenantDir / "api")
-    .dependsOn(tenantDomainProject, platformProject)
-
-val tenantComponentProject = (project in tenantDir / "component").dependsOn(tenantApiProject, tenantImplProject)
-
-val appProject = (project in file("app")).dependsOn(tenantComponentProject, platformProject)
+val appProject = (project in file("app")).dependsOn(tenantComponentProject, commonComponentsProject, platformProject)
 
 lazy val root = (project in file("."))
   .settings(
     name            := "root-composite",
     testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
   )
-  .aggregate(appProject, tenantComponentProject, tenantApiProject, tenantDomainProject, tenantImplProject, platformProject,
-    libProject)
+  .aggregate(appProject, tenantComponentProject, commonComponentsProject, platformProject, libProject)

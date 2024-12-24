@@ -2,6 +2,7 @@ package com.saldubatech.infrastructure.container
 
 import com.typesafe.config
 import com.typesafe.config.ConfigFactory
+import io.getquill.JdbcContextConfig
 import zio.{Config, ULayer, ZIO, ZLayer}
 import zio.config.*
 import zio.config.typesafe.*
@@ -39,61 +40,15 @@ object Configuration:
 
   end ApiConfig // object
 
-  trait DbConfig:
-
-    val serverName: String
-    val portNumber: Int
-    val user: String
-    val password: String
-    val databaseName: String
-
-  case class JdbcContextConfig(
-      override val serverName: String,
-      override val portNumber: Int,
-      override val user: String,
-      override val password: String,
-      override val databaseName: String)
-      extends DbConfig:
-
-    val configuration =
-      ConfigFactory.parseMap(
-        Map[String, Any](
-          "serverName"   -> serverName,
-          "portNumber"   -> portNumber,
-          "user"         -> user,
-          "password"     -> password,
-          "databaseName" -> databaseName
-        ).asJava
-      )
-
   object DbConfig:
 
-    def jdbcContextConfig(path: String) =
-      Config
-        .Nested(
-          path,
-          Config.string("serverName") ++
-            Config.int("portNumber") ++
-            Config.string("user") ++
-            Config.string("password") ++
-            Config.string("databaseName")
-        )
-        .to[JdbcContextConfig]
-
-    val singleJdbcContextConfig = jdbcContextConfig("db")
-
-    def layer(path: String): ZLayer[config.Config, Config.Error, JdbcContextConfig] =
+    def layer(path: String) =
       ZLayer(
         for {
           rootConfig <- ZIO.service[config.Config]
-          rs <- read(
-                  jdbcContextConfig(path).from(
-                    TypesafeConfigProvider.fromTypesafeConfig(
-                      ConfigFactory.defaultApplication().resolve()
-                    )
-                  )
-                )
-        } yield rs
+        } yield JdbcContextConfig(rootConfig.getConfig(path).resolve())
       )
+
+  end DbConfig
 
 end Configuration
