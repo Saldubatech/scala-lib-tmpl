@@ -9,8 +9,6 @@ import zio.http.endpoint.openapi.{OpenAPI, OpenAPIGen, SwaggerUI}
 
 class HealthCheckRoutes(svc: HealthCheckService.Interface):
 
-  private given noContentStatusCodec: StatusCodec[Unit] = HttpCodec.status(Status.NoContent)
-
   val headEndpoint = Endpoint(Method.HEAD / "healthcheck").out[Unit](Status.NoContent)
   val getEndpoint  = Endpoint(Method.GET / "healthcheck").out[String].outError[String](Status.InternalServerError)
 
